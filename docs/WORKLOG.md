@@ -1,0 +1,61 @@
+# Work log
+
+Chronological record of what was done, why, and what was found. Newest at the bottom.
+
+## 2026-11-16: Robot model with hook
+
+- Copied the Origin model from `Roboparty/roboto_origin` `modules/rpo_description` (commit `d94afba`) into
+  `robot/`. This is the same URDF robolab trains on (byte-identical to robolab's submodule `8e0f8f7`).
+- Added the team hook (`roboto-origin-v2-right-square-hook.stl`) to the right wrist as `right_hook_link`
+  (fixed joint on `right_elbow_yaw_link` at x = 0.13275 m). Mounting was measured from both meshes: the
+  hook's 36 mm boss sits in the forearm's 37.2 mm bore, and the 6× M3 bolt circle lines up at a 90° roll,
+  which makes the hook open upward at the zero pose.
+- Mass 60.3 g (solid PLA + screws). Collision is 10 CoACD convex pieces so the hook opening stays open.
+- Details: `robot/README.md`. Generator: `robot/scripts/build_hook_model.py`. Render: `robot/hook_preview.png`.
+
+## 2026-11-16: Route decisions
+
+- Training framework: **Isaac Lab via Roboparty's robolab** instead of a custom MuJoCo trainer. robolab
+  already has a BeyondMimic motion-tracking task for Origin, a motion converter, PPO, and a deploy path.
+- robolab (Isaac Lab 3.0) defaults to the **MuJoCo Warp** physics backend, so an RTX GPU isn't required.
+- Retargeting: **Roboparty's GMR fork** already supports Origin (`smplx_to_rpo.json`, `gvhmr_to_robot.py`),
+  so "add Origin to GMR" is mostly done. Roboparty's own docs now point to HHTools for retargeting; we
+  stay on GMR as requested and convert its output with a small adapter.
+- Decisions D1–D9 recorded in `PLAN.md`.
+
+## 2026-11-16: Joint limits (D5)
+
+- Compared 7 Roboparty model files + the deploy config. 16 of 23 joints disagree somewhere; Roboparty
+  doesn't document which is correct.
+- robolab trains on the URDF limits (soft limit factor 0.9); Roboparty GMR's MJCF uses a third mix; deploy
+  sets ±3.14 for all joints.
+- **Decision:** URDF limits everywhere. `build_hook_model.py` now overwrites every joint range in
+  `robot/mjcf/rpo_hook.xml` with the URDF value (verified: 23/23 match; e.g. right elbow pitch is now
+  −0.6..1.57 instead of −1.0..3.57).
+
+## 2026-11-16: Video selection (D7)
+
+- 7 clips in `Videos/`: 0530–0533 are landscape side views, 0534–0536 portrait front views (the person walks
+  toward the camera and leaves the frame, so not used).
+- **0531 and 0532**: static camera, whole body visible throughout, walk → squat → lift → walk → squat →
+  set down, ~17 s, 1280×720 @ 30 fps.
+- Checked the carrying hand by zooming into the lift and carry frames. The person faces screen-right, so the
+  camera sees their right side; the carrying arm is the near arm and the bag hangs on the near side of the
+  legs → **right hand** in both clips, matching the hook side.
+- **0532 preferred**: the hand comes palm-up under the handle and lifts (5.8–6.8 s), like a hook would.
+  0531 grasps from above. Final pick after GVHMR (Gate 1).
+
+## 2026-11-16: Trainer input format verified
+
+- robolab's `scripts/tools/hhtools/convert_motion.py` reads a CSV with `time`, `root_x, root_y, root_z,
+  root_qx, root_qy, root_qz, root_qw` (xyzw) and one `dof_<joint_name>` column per joint, plus an optional
+  `# sample_rate: <fps>` comment. It runs forward kinematics on the training URDF and writes the BeyondMimic
+  `.npz` (50 Hz default).
+- GMR (`gvhmr_to_robot.py --save_path`) saves `fps`, `root_pos`, `root_rot`, `dof_names`, `dof_pos`,
+  `body_names`, `body_positions` in a `.pkl` → a small adapter to that CSV is enough.
+- **Caution:** GMR reorders `root_rot` twice with contradictory comments ("xyzw to wxyz" / "wxyz to xyzw"),
+  so the saved quaternion order is not certain from reading the code. The adapter will determine it
+  empirically: run FK under both interpretations and keep the one that reproduces GMR's saved
+  `body_positions`.
+- BeyondMimic policy observations (`command`, `base_ang_vel`, `projected_gravity`, `joint_pos`,
+  `joint_vel`, `actions`) match `roboparty_deploy`'s `obs_layouts`, so Step 5 needs no observation changes.

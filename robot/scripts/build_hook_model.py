@@ -140,6 +140,24 @@ def write_urdf(p):
     (ROOT / "urdf" / "rpo_hook.urdf").write_text(out)
 
 
+def sync_joint_limits_from_urdf(mjcf_text):
+    """Upstream's MJCF and URDF disagree on 16 of 23 joint ranges (e.g. elbow pitch 3.57 vs 1.57 rad).
+    Decision (2026-11-16): the URDF is the source of truth, because robolab trains on it
+    (soft limit = 0.9 x URDF range). Overwrite every MJCF joint range with the URDF value."""
+    import xml.etree.ElementTree as ET
+    limits = {j.get("name"): (j.find("limit").get("lower"), j.find("limit").get("upper"))
+              for j in ET.parse(ROOT / "urdf" / "rpo.urdf").getroot().findall("joint")
+              if j.find("limit") is not None and j.get("type") == "revolute"}
+    changed = 0
+    for name, (lo, hi) in limits.items():
+        pattern = rf'(<joint name="{re.escape(name)}"[^>]*?range=")[^"]*(")'
+        mjcf_text, n = re.subn(pattern, rf"\g<1>{float(lo):g} {float(hi):g}\g<2>", mjcf_text)
+        assert n == 1, f"joint {name} not found exactly once in MJCF"
+        changed += n
+    assert changed == 23, changed
+    return mjcf_text
+
+
 def write_mjcf(p):
     src = (ROOT / "mjcf" / "rpo.xml").read_text()
     I, c = p["I"], p["com"]
@@ -158,6 +176,7 @@ def write_mjcf(p):
 {geoms}
                   </body>"""
     out = src.replace('<mujoco model="rpo">', '<mujoco model="rpo_hook">', 1)
+    out = sync_joint_limits_from_urdf(out)
     anchor = '<mesh name="right_elbow_yaw_link" file="right_elbow_yaw_link.STL"/>'
     assert out.count(anchor) == 1
     out = out.replace(anchor, anchor + "\n" + assets)

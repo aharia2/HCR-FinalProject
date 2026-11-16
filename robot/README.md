@@ -46,7 +46,10 @@ python scripts/build_hook_model.py
 
 ## Notes
 
-- The upstream URDF and MJCF disagree on some joint limits. For example, `right_elbow_pitch_joint` is
-  `-0.6..1.57` in the URDF and `-1.0..3.57` in the MJCF. This is inherited from upstream and left unchanged.
+- **Joint limits:** upstream's URDF and MJCF disagree on 16 of 23 joints. For example,
+  `right_elbow_pitch_joint` is `-0.6..1.57` in the URDF and `-1.0..3.57` in the MJCF. We decided
+  (2026-11-16) that the **URDF limits are the source of truth**, because robolab trains on that URDF and keeps
+  the policy within 90 % of its limits. `rpo_hook.xml` therefore uses the URDF ranges for every joint;
+  the build script overwrites them. The unmodified upstream `mjcf/rpo.xml` keeps its original ranges.
 - When MuJoCo loads the URDF directly, it merges the fixed hook link into `right_elbow_yaw_link` unless
   you set `<compiler fusestatic="false"/>`. The MJCF keeps it as its own body.
