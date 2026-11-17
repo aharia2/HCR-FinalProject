@@ -59,3 +59,17 @@ Chronological record of what was done, why, and what was found. Newest at the bo
   `body_positions`.
 - BeyondMimic policy observations (`command`, `base_ang_vel`, `projected_gravity`, `joint_pos`,
   `joint_vel`, `actions`) match `roboparty_deploy`'s `obs_layouts`, so Step 5 needs no observation changes.
+
+## 2026-11-16: GPU VM
+
+- Google Cloud project `project-bc8c6e21-0f04-4e24-8d6` (billing account `01D95C-F2BA4A-0CEF0B`, $300 credits).
+  Account upgraded from free trial; global GPU quota raised 0 → 1.
+- VM **`hcr-gpu`** in **`us-central1-b`** (`us-central1-a` was out of L4s): `g2-standard-8` (8 vCPU, 32 GB),
+  1× **NVIDIA L4 24 GB**, image `common-cu129-ubuntu-2204-nvidia-580` (Ubuntu 22.04.5, driver 580.178,
+  CUDA 12.9), 200 GB pd-balanced disk. Verified with `nvidia-smi`.
+- Cost: ~$0.85/h while running, ~$20/month disk. **Policy: start only when a step needs the GPU, stop
+  right after.** Stopped after verification.
+- Budget **"HCR GPU budget"**: $300, email alerts at ~$50 / $150 / $250 / $300.
+- Commands (from this machine, `gcloud` at `~/google-cloud-sdk/bin/gcloud`):
+  `gcloud compute instances start|stop hcr-gpu --zone=us-central1-b`,
+  `gcloud compute ssh hcr-gpu --zone=us-central1-b`.

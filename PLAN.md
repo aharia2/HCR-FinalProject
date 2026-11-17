@@ -13,7 +13,7 @@ Progress and decisions are logged in [`docs/WORKLOG.md`](docs/WORKLOG.md).
 | D1 | Hook on the **right wrist only** |
 | D2 | Hook printed in **PLA**, attached with 6× M3 (model mass 60.3 g, assuming 100 % infill) |
 | D3 | **No time limit** in the success test |
-| D4 | One cloud GPU VM (set up by Arya). Training runs on Isaac Lab 3.0 with the **MuJoCo Warp (Newton)** backend (robolab's default), so an RTX card is not required |
+| D4 | One cloud GPU VM, `hcr-gpu` (GCP us-central1-b, 1× L4 24 GB; see WORKLOG). Training runs on Isaac Lab 3.0 with the **MuJoCo Warp (Newton)** backend (robolab's default), so an RTX card is not required |
 | D5 | **URDF joint limits are the source of truth** (`rpo_description/urdf/rpo.urdf`). robolab trains on them at 0.9 × range. `robot/mjcf/rpo_hook.xml` and the GMR robot model use the same limits |
 | D6 | **One continuous clip** (walk → hook → carry → place) |
 | D7 | Source video: **`Videos/IMG_0532.mp4`** (side view, static camera, whole body in frame, bag in the **right** hand, hand comes palm-up under the handle like a hook). 0531 is the backup. Final choice is made on GVHMR output quality |
@@ -80,8 +80,7 @@ Progress and decisions are logged in [`docs/WORKLOG.md`](docs/WORKLOG.md).
 
 ## Inputs needed from Arya
 
-1. **GPU VM**: Ubuntu 22.04, NVIDIA L4 (24 GB) or better (A100/L40S trains faster), ≥ 8 vCPU, ≥ 32 GB RAM,
-   ≥ 200 GB disk. SSH access from this machine.
+1. ~~GPU VM~~ done: `hcr-gpu` (see WORKLOG).
 2. **Body models** (free registration, needs your own account):
    - SMPL-X (https://smpl-x.is.tue.mpg.de): `SMPLX_NEUTRAL.npz`, `SMPLX_MALE.npz`, `SMPLX_FEMALE.npz`
      **and** the `.pkl` versions (`SMPLX_NEUTRAL.pkl`, …). GVHMR uses the `.npz` files, GMR the `.pkl` files.
