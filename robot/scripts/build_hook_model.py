@@ -46,6 +46,13 @@ SCREW_ANGLES_DEG = [0, 60, 120, 180, 240, 300]      # in the link frame, measure
 # (~10% extra volume) but keep the hook throat open. One convex hull would be 2.6x the volume.
 COACD_THRESHOLD = 0.08
 COACD_MAX_HULLS = 10
+# Collision geometry only covers the hook for x >= this (m, link frame). Reason (2026-11-17): the training URDF
+# gives the forearm its collision capsule on right_elbow_pitch_link (robolab turns the cylinder into a capsule),
+# and that capsule's end reaches 3.1 cm into the hook's flange in EVERY pose. If the simulator keeps the hook as
+# its own body, that would be a permanent self-collision. The U (x = 0.045-0.09) and the throat's back wall
+# (diagonal) are what touch a bag handle; the flange and the straight bar from the mount are not. 0.036 still
+# overlapped by 1 mm; 0.040 gives 3 mm clearance and keeps >= 0.8 cm free space at the handle seat.
+COLLISION_MIN_X = 0.040
 
 
 def rot_x(deg):
@@ -83,7 +90,9 @@ def build_meshes():
     # --- collision: convex decomposition so the hook throat stays open ---
     import coacd
     coacd.set_log_level("error")
-    parts = coacd.run_coacd(coacd.Mesh(m.vertices, m.faces), threshold=COACD_THRESHOLD,
+    cm = m.slice_plane([COLLISION_MIN_X, 0, 0], [1, 0, 0], cap=True)   # needs shapely + mapbox_earcut
+    assert cm.is_watertight
+    parts = coacd.run_coacd(coacd.Mesh(cm.vertices, cm.faces), threshold=COACD_THRESHOLD,
                              max_convex_hull=COACD_MAX_HULLS, seed=0)
     for old in MESH_DIR.glob("right_hook_collision_*.STL"):
         old.unlink()

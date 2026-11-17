@@ -99,3 +99,10 @@ Chronological record of what was done, why, and what was found. Newest at the bo
   throughout the carry), balance ⚠️ (squat COM ≤ 2.2 cm outside the feet; flagged, not forced), self-collision
   ❌ → fixed (forearm was 2.4 cm inside the right thigh at pickup; added mink collision avoidance, now 0
   penetrating frames). Regenerated `bag_pickup_IMG_0531.npz` (still 1 mm vs FK).
+
+## 2026-11-17: Gate 2 approved (bag handle ≈ 0.35 m; accept ≈ 10 cm set-down drop for now)
+
+- Pre-training review → checked the motion against the training URDF's collision shapes (capsule arms):
+  OK, but found the forearm capsule overlapping the hook flange by 3.1 cm in every pose → hook collision
+  geometry clipped to x ≥ 4 cm (6 pieces). Left forearm roll artifact held at 0. Deploy entry/exit poses
+  checked (same range as Roboparty's motions). Details: addendum in `docs/step2_gmr.md`.

@@ -802,30 +802,6 @@
         <mesh filename="../meshes/right_hook_collision_5.STL"/>
       </geometry>
     </collision>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="../meshes/right_hook_collision_6.STL"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="../meshes/right_hook_collision_7.STL"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="../meshes/right_hook_collision_8.STL"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="../meshes/right_hook_collision_9.STL"/>
-      </geometry>
-    </collision>
   </link>
   <joint name="right_hook_joint" type="fixed">
     <origin xyz="0.13275 0.0 0.0" rpy="0 0 0"/>

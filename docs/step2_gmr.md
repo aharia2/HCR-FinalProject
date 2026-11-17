@@ -84,3 +84,27 @@ Files:
   balanced (COM ≈ 1–2 cm outside the feet). BeyondMimic tracks relative body poses, so the policy can shift
   its weight slightly. If tracking fails in the squats, the next fix is a centre-of-mass task in the IK
   (mink `ComTask`) to pull the COM over the feet.
+
+## Addendum (2026-11-17, before step 3): checks against the *training* model
+
+1. **Self-collision with the training URDF's collision shapes** (boxes for thighs/knees/torso, cylinders for
+   the arms, no collision on the forearm link) with robolab's `replace_cylinders_with_capsules=True` (worst
+   case: caps added to the full length). Of all 269 non-adjacent body pairs, the closest is 1.6 cm (pelvis vs
+   left thigh), and the right arm/hook vs leg pairs are ≥ 2.4 cm. ✅
+2. **Hook vs elbow capsule: fixed in the robot model.** In that check, the forearm's collision capsule (on
+   `right_elbow_pitch_link`) overlapped the hook's mounting flange by 3.1 cm **in every pose**. That would be a
+   permanent self-collision if the simulator keeps the hook as a separate body. The hook's collision
+   geometry now covers only x ≥ 4 cm of the hook (the U and the throat's back wall). Visual mesh, mass and
+   inertia are unchanged. Result: 3 mm clearance to the capsule, and the handle seat still has ≥ 0.8 cm of
+   free space. 6 convex pieces instead of 10 (`robot/scripts/build_hook_model.py`, `COLLISION_MIN_X`).
+3. **Left forearm roll.** GMR pinned `left_elbow_yaw_joint` at its soft limit (+1.41 rad) for the whole
+   clip. That's a left-wrist orientation artifact with no task role, and the training would penalise it.
+   `postprocess.py` now holds it at 0 rad (the standing default).
+4. **Entering and leaving the motion on the robot.** `roboparty_deploy` switches from the standing/walking
+   policy to a motion policy with LB, starting at frame 0 with no blending, and holds the last frame at the
+   end. Our first and last frames are now 0.65 rad max / 0.3 rad rms from the deploy default pose, the same
+   range as Roboparty's own sample motions (0.4–0.6 rad max). The person is standing still at both ends,
+   so no extra blend segment is needed.
+
+Step 2 numbers after these changes are the same (hook 0.33 / 0.43 m, opening up, no self-collision, limits OK).
+`bag_pickup_IMG_0531.npz` regenerated.

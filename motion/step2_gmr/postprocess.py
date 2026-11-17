@@ -8,6 +8,7 @@
    lowest foot-mesh point; smooth that signal (1.5 Hz) and subtract it from the root height, so the lowest
    foot touches z = 0 throughout (walking always has a foot on the ground; there is no flight phase).
 3. Clamp joints to the robolab soft range (0.9 x URDF) again after filtering.
+4. Hold left_elbow_yaw_joint at 0 (GMR artifact: pinned at its soft limit all clip; no task role).
 hook_pos is recomputed from the cleaned motion.
 """
 import pathlib
@@ -50,6 +51,11 @@ def main(d):
     # (V2 hardware arm limit 3.77 rad/s); lifting motions are well below 3 Hz.
     arm = [i for i, n in enumerate(names) if "_arm_" in n or "_elbow_" in n]
     Q[:, 7 + np.array(arm)] = lowpass(Q[:, 7 + np.array(arm)], fps, ARM_CUT_HZ)
+
+    # left forearm roll: GMR pins it at the soft limit (+1.41 rad) for the whole clip (left-wrist orientation
+    # artifact). It moves no other body and has no task role (hook is on the right), and a reference sitting on
+    # the limit is penalised in training, so hold it at the deploy/standing default (0.0 rad).
+    Q[:, 7 + names.index("left_elbow_yaw_joint")] = 0.0
 
     rng = model.jnt_range[[model.joint(n).id for n in names]]
     mid, half = rng.mean(1), (rng[:, 1] - rng[:, 0]) / 2 * SOFT

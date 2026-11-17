@@ -149,9 +149,9 @@
     },
     {
       "joint": "left_elbow_yaw_joint",
-      "min_norm": 0.831,
-      "max_norm": 0.9,
-      "max_abs_vel": 0.5,
+      "min_norm": 0.0,
+      "max_norm": 0.0,
+      "max_abs_vel": 0.0,
       "sim_vel_limit": 8.0,
       "hw_vel_limit": 3.7692
     },
