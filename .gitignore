@@ -1,0 +1,14 @@
+# Licensed body models (SMPL / SMPL-X) - must not be redistributed
+body_models/
+*SMPL*.zip
+*smpl*.zip
+*SMPLX*
+SMPL_*.pkl
+basicmodel_*.pkl
+basicModel_*.pkl
+# Browser partial downloads
+*.crdownload
+# Local environments and outputs
+.venv/
+__pycache__/
+outputs/
