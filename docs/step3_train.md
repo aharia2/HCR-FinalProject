@@ -43,3 +43,14 @@ set-down**, **torso path-length ratio**, hook-throat error (total and with the t
 per-body error. Saves env 0's trajectory for `render_rollout.py`. Fixes made after the first use: the
 reference body is now the torso (was the left hip), and quaternion maths uses Isaac Lab's own functions
 (Isaac Lab 3.0 is x-first).
+
+## Run 2 progress (frame-0 evaluation, clean, 64 envs)
+
+| Checkpoint | Finished clip | Torso path ratio | Torso xy offset at pickup | Hook error at pickup (total / arm only) |
+|---|---|---|---|---|
+| run 1 @ 1400 (baseline) | 64/64, in place | 0.23 | 0.66 m | 0.75 m / – |
+| run 2 @ 1000 | 0/64 (all hit the 0.8 m limit at ≈ 2.3 s: did not start walking from a standstill) | – | – | – |
+| run 2 @ 2000 | 44/64 | 0.74 | 0.45 m (p90 0.53) | 0.40 m / **0.08 m** |
+
+The arm/hook placement relative to the body is good (8–9 cm). The remaining error is the body lagging the
+reference by ≈ 0.45 m, accumulated in the first ≈ 4 s after a slow start from standing.
