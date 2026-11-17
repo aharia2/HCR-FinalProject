@@ -54,3 +54,9 @@ reference body is now the torso (was the left hip), and quaternion maths uses Is
 
 The arm/hook placement relative to the body is good (8–9 cm). The remaining error is the body lagging the
 reference by ≈ 0.45 m, accumulated in the first ≈ 4 s after a slow start from standing.
+| run 2 @ 4000, clean | **64/64** | 0.78 | 0.27 m | 0.25 m / **0.03 m** (set-down 0.41 / 0.17 m) |
+| run 2 @ 4000, randomized | 43/64 | 0.90 | 0.25 m | 0.24 m / 0.05 m (set-down 0.53 / 0.13 m) |
+| run 2 @ 8000, clean | **64/64** | 0.88 | **0.14 m** | **0.13 m / 0.04 m** (set-down 0.26 / 0.07 m) |
+| run 2 @ 8000, randomized | **56/64** | 0.96 | 0.23 m | 0.20 m / 0.08 m (set-down 0.37 / 0.09 m) |
+
+Videos (policy right, reference left): `results/run2_8000/policy_vs_ref_{clean,randomized}.mp4` (also 4000).
