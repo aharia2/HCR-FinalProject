@@ -28,6 +28,19 @@ def main():
     R = np.load(a.traj, allow_pickle=True)
     M = np.load(a.ref)
     model = load_model()
+    has_bag = "bag_pos" in R.files
+    if has_bag:   # add the bag (same geometry as sim/step4_bag/assets/bag.urdf) as a free body
+        import json as _json
+        G = _json.load(open(REPO / "sim/step4_bag/bag_placement.json"))["geometry"]
+        xml = (REPO / "robot/mjcf/rpo_hook.xml").read_text().replace('meshdir="../meshes/"', f'meshdir="{REPO / "robot/meshes"}/"')
+        spec = mujoco.MjSpec.from_string(xml)
+        b = spec.worldbody.add_body(name="bag"); b.add_freejoint()
+        bx, by, bz = G["box"]
+        b.add_geom(type=mujoco.mjtGeom.mjGEOM_BOX, size=[bx / 2, by / 2, bz / 2], pos=[0, 0, bz / 2], rgba=[0.3, 0.6, 0.3, 1], contype=0, conaffinity=0)
+        for sx in (-1, 1):
+            b.add_geom(type=mujoco.mjtGeom.mjGEOM_CAPSULE, fromto=[sx * G["post_x"], 0, bz, sx * G["post_x"], 0, G["bar_z"]], size=[G["bar_r"], 0, 0], rgba=[0.9, 0.9, 0.2, 1], contype=0, conaffinity=0)
+        b.add_geom(type=mujoco.mjtGeom.mjGEOM_CAPSULE, fromto=[-G["post_x"], 0, G["bar_z"], G["post_x"], 0, G["bar_z"]], size=[G["bar_r"], 0, 0], rgba=[0.9, 0.9, 0.2, 1], contype=0, conaffinity=0)
+        model = spec.compile()
     d_ref, d_pol = mujoco.MjData(model), mujoco.MjData(model)
     mj_names = [str(n) for n in M["joint_names"]]
     isaac_names = [str(n) for n in R["joint_names"]]
@@ -41,10 +54,13 @@ def main():
     az = float(np.degrees(np.arctan2(walk[1], walk[0]))) + 90
     for k in range(T):
         kr = min(k, len(Qref) - 1)
-        d_ref.qpos[:] = Qref[kr]
+        d_ref.qpos[:Qref.shape[1]] = Qref[kr]
         d_pol.qpos[:3] = R["root_pos"][k]
         d_pol.qpos[3:7] = R["root_quat_wxyz"][k]
-        d_pol.qpos[7:] = R["joint_pos"][k][perm]
+        d_pol.qpos[7:7 + len(perm)] = R["joint_pos"][k][perm]
+        if has_bag:
+            d_pol.qpos[-7:-4] = R["bag_pos"][k]; d_pol.qpos[-4:] = R["bag_quat_wxyz"][k]
+            d_ref.qpos[-7:] = d_pol.qpos[-7:]; d_ref.qpos[-7] += 100.0       # hide the bag in the reference panel
         imgs = []
         for d, label in ((d_ref, "reference"), (d_pol, "policy")):
             mujoco.mj_forward(model, d)
@@ -54,7 +70,9 @@ def main():
             rr.update_scene(d, cam)
             img = cv2.cvtColor(rr.render(), cv2.COLOR_RGB2BGR)
             cv2.putText(img, f"{label}  t={k * 0.02:5.2f}s", (10, 25), 0, 0.7, (0, 0, 0), 2)
-            if label == "policy" and "hook_err" in R.files:
+            if label == "policy" and has_bag:
+                cv2.putText(img, f"bag height {R['bag_height'][k] * 100:4.1f} cm", (10, 50), 0, 0.6, (0, 0, 0), 2)
+            elif label == "policy" and "hook_err" in R.files:
                 cv2.putText(img, f"hook err {R['hook_err'][k] * 100:4.1f} cm", (10, 50), 0, 0.6, (0, 0, 0), 2)
             imgs.append(img)
         vw.write(np.hstack(imgs))

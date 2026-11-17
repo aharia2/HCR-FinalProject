@@ -122,3 +122,16 @@ Chronological record of what was done, why, and what was found. Newest at the bo
 - Smoke tests: stock RPO-BeyondMimic and RPO-BagMimic, 10 iterations each, ≈ 1.45 s/iteration at 4096 envs.
 - Full run launched 18:34 UTC, `--max_iterations=15000` (ETA ≈ 6.5 h, ≈ $5.5); watchdog shuts the VM down
   30 min after training exits; hard cap 02:04 UTC. Plan: evaluate checkpoints and stop early on plateau.
+
+## 2026-11-17 (evening): step 3 progress, step 4 groundwork, automatic hand-off
+
+- Pushed to GitHub at the user's request (`853fe5a..8c8e703`). Previous Claude session ended (out of credit);
+  VM training was unaffected.
+- Step 3 run 2 evals: iteration 4000 → 8000 improved hook error at pickup 25 → 13 cm, randomized completion
+  43 → 56/64. Videos sent to the user.
+- User approved starting step 4 directly after step 3. Step 4 groundwork (`docs/step4_bag.md`): handle
+  placement search, bag model, `RPO-BagCarry`, spawn/physics check, eval script, bag rendering. Baseline: step 3
+  policy with a 1 kg bag = 0/32 success (squats ≈ 25–30 cm short of the handle).
+- `vm_chain_step3_to_step4.sh` running on the VM: waits for step 3 to exit, evaluates its final checkpoint,
+  starts step 4 (5000 iterations, resumed from step 3) and re-arms the shutdown watchdog. Hard cap moved to
+  04:45 UTC.
