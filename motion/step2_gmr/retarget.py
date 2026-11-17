@@ -9,6 +9,7 @@ What it does
                   (= robolab's soft_joint_pos_limit_factor, so the reference never leaves the training limits)
       IK config = configs/smplx_to_rpo_hook.json (Roboparty's tuned smplx_to_rpo.json + our hook entry, if any)
   * Runs GMR's IK frame by frame at 50 Hz (BeyondMimic's rate).
+  * Adds a mink collision-avoidance limit (right arm/hook vs pelvis, torso, legs; >= 1 cm).
   * Saves qpos straight from MuJoCo (root quaternion is MuJoCo's w-first; no GMR re-ordering involved).
 
 Outputs in --out:
@@ -44,6 +45,11 @@ def build_gmr_model(tmpdir: pathlib.Path) -> pathlib.Path:
 
     src, n = re.subn(r'(<joint name="[^"]+"[^>]*?range=")([^"]+)"', shrink, src)
     assert n == 23, n
+    # make robot geoms mutually collidable in this IK-only copy, so mink's collision-avoidance limit
+    # (which skips pairs that fail the contype/conaffinity test) can keep the right arm off the legs
+    default_geom = '<geom condim="4" contype="1" conaffinity="0"'
+    assert src.count(default_geom) == 1
+    src = src.replace(default_geom, '<geom condim="4" contype="1" conaffinity="1"')
     out = tmpdir / "rpo_hook_soft.xml"
     out.write_text(src)
     return out
@@ -81,6 +87,27 @@ def main():
 
     gmr = GMR(actual_human_height=human_h, src_human="smplx", tgt_robot="rpo_hook")
     model, data = gmr.model, mujoco.MjData(gmr.model)
+
+    # Self-collision avoidance (added after Gate-2 review: forearm went 2.4 cm into the right thigh at pickup;
+    # robolab trains with self-collisions enabled). Keep >= 1 cm between right arm/hook and pelvis/torso/legs.
+    import mink
+
+    def geoms_of(bodies, skip_visual_hook=True):
+        ids = []
+        for g in range(model.ngeom):
+            b = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, model.geom_bodyid[g])
+            gname = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g) or ""
+            if b in bodies and not (skip_visual_hook and gname == "right_hook_visual"):
+                ids.append(g)
+        return ids
+    arm = geoms_of(["right_elbow_pitch_link", "right_elbow_yaw_link", "right_hook_link"])
+    body = geoms_of(["base_link", "torso_link", "right_thigh_yaw_link", "right_thigh_roll_link",
+                     "right_thigh_pitch_link", "right_knee_link", "right_ankle_pitch_link", "right_ankle_roll_link",
+                     "left_thigh_pitch_link", "left_knee_link"])
+    gmr.ik_limits.append(mink.CollisionAvoidanceLimit(
+        model=model, geom_pairs=[(arm, body)], minimum_distance_from_collisions=0.01,
+        collision_detection_distance=0.05))
+    print(f"collision avoidance: {len(arm)} arm/hook geoms vs {len(body)} body geoms")
     hook_id = model.body("right_hook_link").id
     # hook throat = where a handle rests: top of the bottom bar is z=-0.026 for x=0.045..0.068 (mesh section)
     throat_local = np.array([0.060, 0.0, -0.020])

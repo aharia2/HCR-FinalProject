@@ -95,3 +95,7 @@ Chronological record of what was done, why, and what was found. Newest at the bo
   `right_hook_link`, weights 50/2 (set-down gap 20 → 11 cm; remaining gap from ankle-pitch soft limit).
 - Converted with robolab's own `convert_motion.py` → `bag_pickup_IMG_0531.npz`; verified to 1 mm vs our FK.
 - Full report: `docs/step2_gmr.md`.
+- Review before Gate 2 added three checks (`extra_checks.py`): hook opening direction ✅ (opening points up
+  throughout the carry), balance ⚠️ (squat COM ≤ 2.2 cm outside the feet; flagged, not forced), self-collision
+  ❌ → fixed (forearm was 2.4 cm inside the right thigh at pickup; added mink collision avoidance, now 0
+  penetrating frames). Regenerated `bag_pickup_IMG_0531.npz` (still 1 mm vs FK).

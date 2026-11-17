@@ -29,7 +29,7 @@
     },
     {
       "joint": "left_thigh_pitch_joint",
-      "min_norm": -0.849,
+      "min_norm": -0.818,
       "max_norm": 0.788,
       "max_abs_vel": 5.98,
       "sim_vel_limit": 25.0,
@@ -38,7 +38,7 @@
     {
       "joint": "left_knee_joint",
       "min_norm": -0.9,
-      "max_norm": 0.852,
+      "max_norm": 0.845,
       "max_abs_vel": 5.97,
       "sim_vel_limit": 25.0,
       "hw_vel_limit": 10.47
@@ -62,7 +62,7 @@
     {
       "joint": "right_thigh_yaw_joint",
       "min_norm": -0.808,
-      "max_norm": 0.504,
+      "max_norm": 0.492,
       "max_abs_vel": 1.35,
       "sim_vel_limit": 25.0,
       "hw_vel_limit": 10.47
@@ -77,7 +77,7 @@
     },
     {
       "joint": "right_thigh_pitch_joint",
-      "min_norm": -0.897,
+      "min_norm": -0.839,
       "max_norm": 0.623,
       "max_abs_vel": 5.56,
       "sim_vel_limit": 25.0,
@@ -109,7 +109,7 @@
     },
     {
       "joint": "torso_joint",
-      "min_norm": -0.043,
+      "min_norm": -0.037,
       "max_norm": 0.065,
       "max_abs_vel": 0.83,
       "sim_vel_limit": 25.0,
@@ -118,7 +118,7 @@
     {
       "joint": "left_arm_pitch_joint",
       "min_norm": 0.284,
-      "max_norm": 0.546,
+      "max_norm": 0.545,
       "max_abs_vel": 0.94,
       "sim_vel_limit": 8.0,
       "hw_vel_limit": 3.7692
@@ -141,7 +141,7 @@
     },
     {
       "joint": "left_elbow_pitch_joint",
-      "min_norm": -0.591,
+      "min_norm": -0.589,
       "max_norm": 0.556,
       "max_abs_vel": 4.6,
       "sim_vel_limit": 8.0,
@@ -166,7 +166,7 @@
     {
       "joint": "right_arm_roll_joint",
       "min_norm": 0.55,
-      "max_norm": 0.833,
+      "max_norm": 0.84,
       "max_abs_vel": 0.97,
       "sim_vel_limit": 8.0,
       "hw_vel_limit": 3.7692
@@ -174,7 +174,7 @@
     {
       "joint": "right_arm_yaw_joint",
       "min_norm": -0.567,
-      "max_norm": -0.145,
+      "max_norm": -0.138,
       "max_abs_vel": 1.03,
       "sim_vel_limit": 8.0,
       "hw_vel_limit": 3.7692
@@ -202,23 +202,23 @@
     "lowest_point_max_m": 0.0097,
     "left": {
       "contact_frac": 0.851,
-      "median_speed_in_contact_mps": 0.0255,
+      "median_speed_in_contact_mps": 0.0257,
       "p95_speed_in_contact_mps": 0.218
     },
     "right": {
-      "contact_frac": 0.542,
-      "median_speed_in_contact_mps": 0.0316,
-      "p95_speed_in_contact_mps": 0.1134
+      "contact_frac": 0.578,
+      "median_speed_in_contact_mps": 0.0301,
+      "p95_speed_in_contact_mps": 0.1121
     }
   },
   "base_height_m": {
-    "min": 0.404,
+    "min": 0.407,
     "max": 0.778
   },
   "hook": {
     "pickup": {
       "t": 5.08,
-      "throat_height_m": 0.322
+      "throat_height_m": 0.327
     },
     "place": {
       "t": 13.3,
@@ -226,5 +226,46 @@
     },
     "max_height_m": 0.85,
     "dist_to_scaled_human_rwrist_median_m": 0.073
+  },
+  "hook_orientation": {
+    "note": "up = hook +z . world up; handle can fall out only if up < 0",
+    "carry_window_s": [
+      5.08,
+      13.3
+    ],
+    "up_min_carry": 0.627,
+    "up_median_carry": 0.872,
+    "forearm_elevation_deg_carry": [
+      -30.1,
+      -3.9
+    ],
+    "up_at_pickup": 0.849,
+    "up_at_place": 0.96
+  },
+  "balance": {
+    "robot_mass_kg": 33.82,
+    "bag_kg": 2.0,
+    "note": "margin = distance of COM ground projection inside support polygon (+ inside), metres",
+    "squat_frames": 180,
+    "com_margin_squat_min_m": -0.022,
+    "com_margin_squat_median_m": -0.006,
+    "com_with_bag_margin_squat_min_m": -0.005,
+    "com_with_bag_margin_carry_double_support_min_m": -0.046,
+    "frac_frames_com_outside_double_support": 0.169,
+    "foot_tilt_in_contact_deg_max": {
+      "left": 31.7,
+      "right": 20.1
+    },
+    "foot_tilt_in_contact_deg_p95": {
+      "left": 24.5,
+      "right": 19.0
+    }
+  },
+  "self_collision": {
+    "pairs": "right elbow/forearm/hook collision geoms vs pelvis, torso, right leg, left thigh/knee",
+    "min_distance_m": 0.0011,
+    "at_t_s": 6.28,
+    "min_distance_squats_m": 0.0011,
+    "frames_penetrating": 0
   }
 }
