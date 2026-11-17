@@ -28,6 +28,7 @@ from isaaclab_tasks.utils import resolve_task_config, setup_preset_cli
 from isaaclab_rl.entrypoints.backends import cli_args_rsl_rl as cli_args
 from isaaclab_rl.entrypoints.common import add_common_play_args, apply_env_overrides, close_env, create_isaaclab_env, set_hydra_args
 from isaaclab.utils.string import list_intersection
+from isaaclab.utils.math import quat_apply
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper, check_rsl_rl_version, create_rsl_rl_runner, handle_deprecated_rsl_rl_cfg
 
 THROAT_IN_FOREARM = (0.13275 + 0.060, 0.0, -0.020)   # hook mount offset + handle seat, in right_elbow_yaw_link
@@ -42,10 +43,9 @@ def T(x):
     return wp.to_torch(x)
 
 
-def quat_apply_wxyz(q, v):
-    w, xyz = q[..., :1], q[..., 1:]
-    t = 2.0 * torch.cross(xyz, v, dim=-1)
-    return v + w * t + torch.cross(xyz, t, dim=-1)
+CHECK_T = {"t4": 4.0, "pickup": PICK_T, "t12": 12.0, "place": PLACE_T}
+# Isaac Lab 3.0 returns quaternions x-first (verified: policy root quat at t=0 == reference wxyz rotated).
+# Use Isaac Lab's own math so conventions always match; convert to wxyz only when saving for MuJoCo.
 
 
 def main(argv):
@@ -87,51 +87,69 @@ def main(argv):
         obs = env.get_observations()
 
         N, steps = U.num_envs, int(cmd.motion.time_step_total) + 50
+        clip_steps = int(cmd.motion.time_step_total)
         fa = cmd.cfg.body_names.index("right_elbow_yaw_link")
         alive = torch.ones(N, dtype=torch.bool, device=U.device)
         fell_at = torch.full((N,), -1, dtype=torch.long, device=U.device)
         body_err_sum = torch.zeros(len(cmd.cfg.body_names), device=U.device)
         count = 0
-        hook_err = {"pickup": [], "place": []}
-        traj = dict(t=[], root_pos=[], root_quat_wxyz=[], joint_pos=[], ref_root_pos=[], hook_err=[], body_err=[])
-        throat = torch.tensor(THROAT_IN_FOREARM, device=U.device)
+        at = {k: {} for k in CHECK_T}                       # per check time: lists over alive envs
+        path_r = torch.zeros(N, device=U.device); path_f = torch.zeros(N, device=U.device)
+        prev_r = prev_f = None
+        traj = dict(t=[], root_pos=[], root_quat_wxyz=[], joint_pos=[], ref_torso_pos=[], torso_pos=[],
+                    hook_err=[], hook_err_arm=[], body_err=[])
+        throat = torch.tensor(THROAT_IN_FOREARM, device=U.device).expand(N, 3)
+        org = U.scene.env_origins
         for k in range(steps):
             with torch.inference_mode():
                 obs, _, dones, extras = env.step(policy(obs))
-            ts = cmd.time_steps.clone()
             rb_pos = T(robot.data.body_pos_w)[:, cmd.body_indexes]
             rb_quat = T(robot.data.body_quat_w)[:, cmd.body_indexes]
             ref_pos, ref_quat = cmd.body_pos_w, cmd.body_quat_w
-            err = (rb_pos - ref_pos).norm(dim=-1)                      # global position error per body
-            r_th = rb_pos[:, fa] + quat_apply_wxyz(rb_quat[:, fa], throat.expand(N, 3))
-            f_th = ref_pos[:, fa] + quat_apply_wxyz(ref_quat[:, fa], throat.expand(N, 3))
+            r_an, f_an = cmd.robot_anchor_pos_w, cmd.anchor_pos_w          # torso (anchor) robot / reference
+            err = (rb_pos - ref_pos).norm(dim=-1)                          # global position error per body
+            r_th = rb_pos[:, fa] + quat_apply(rb_quat[:, fa], throat)
+            f_th = ref_pos[:, fa] + quat_apply(ref_quat[:, fa], throat)
             th_err = (r_th - f_th).norm(dim=-1)
+            th_err_arm = ((r_th - r_an) - (f_th - f_an)).norm(dim=-1)      # hook error with torso offset removed
+            torso_xy = (r_an - f_an)[:, :2].norm(dim=-1)
             timeouts = extras.get("time_outs", torch.zeros_like(dones)).bool()
             fell = dones.bool() & ~timeouts & alive
             fell_at[fell] = k
             alive &= ~dones.bool() | timeouts
+            if k < clip_steps:
+                if prev_r is not None:
+                    path_r += (r_an[:, :2] - prev_r).norm(dim=-1); path_f += (f_an[:, :2] - prev_f).norm(dim=-1)
+                prev_r, prev_f = r_an[:, :2].clone(), f_an[:, :2].clone()
             if alive.any():
                 body_err_sum += err[alive].sum(0)
                 count += int(alive.sum())
-            for name, t_ref in (("pickup", PICK_T), ("place", PLACE_T)):
+            for name, t_ref in CHECK_T.items():
                 if k == int(t_ref * 50):
-                    hook_err[name] = th_err[alive].tolist()
+                    at[name] = dict(torso_xy=torso_xy[alive].tolist(), hook=th_err[alive].tolist(),
+                                    hook_arm=th_err_arm[alive].tolist())
+            q = T(robot.data.root_quat_w)[0].cpu().numpy()
             traj["t"].append(k * U.step_dt)
-            traj["root_pos"].append(T(robot.data.root_pos_w)[0].cpu().numpy() - U.scene.env_origins[0].cpu().numpy())
-            traj["root_quat_wxyz"].append(T(robot.data.root_quat_w)[0].cpu().numpy())
+            traj["root_pos"].append((T(robot.data.root_pos_w)[0] - org[0]).cpu().numpy())
+            traj["root_quat_wxyz"].append(q[[3, 0, 1, 2]])
             traj["joint_pos"].append(T(robot.data.joint_pos)[0].cpu().numpy())
-            traj["ref_root_pos"].append((cmd.body_pos_w[0, 0] - U.scene.env_origins[0]).cpu().numpy())
-            traj["hook_err"].append(float(th_err[0]))
+            traj["ref_torso_pos"].append((f_an[0] - org[0]).cpu().numpy())
+            traj["torso_pos"].append((r_an[0] - org[0]).cpu().numpy())
+            traj["hook_err"].append(float(th_err[0])); traj["hook_err_arm"].append(float(th_err_arm[0]))
             traj["body_err"].append(err[0].cpu().numpy())
 
+        def stats(v):
+            return dict(median=round(float(np.median(v)), 4), p90=round(float(np.percentile(v, 90)), 4)) if v else None
         n_fell = int((fell_at >= 0).sum())
+        ok = (fell_at < 0)
         res = dict(
             mode=args.mode, checkpoint=args.checkpoint, num_envs=N, steps=steps,
             completed_without_fall=f"{N - n_fell}/{N}", completion_rate=round((N - n_fell) / N, 4),
             fall_times_s=sorted(round(float(x) * U.step_dt, 2) for x in fell_at[fell_at >= 0].tolist())[:50],
+            torso_path_ratio=stats((path_r[ok] / path_f[ok].clamp(min=1e-6)).tolist()),
+            reference_torso_path_m=round(float(path_f[0]), 3),
+            checks={name: {k2: stats(v) for k2, v in d.items()} for name, d in at.items()},
             mean_body_pos_err_m={b: round(float(e), 4) for b, e in zip(cmd.cfg.body_names, body_err_sum / max(count, 1))},
-            hook_throat_err_m={k: dict(median=round(float(np.median(v)), 4) if v else None,
-                                       p90=round(float(np.percentile(v, 90)), 4) if v else None) for k, v in hook_err.items()},
         )
         os.makedirs(args.out, exist_ok=True)
         with open(os.path.join(args.out, f"eval_{args.mode}.json"), "w") as f:

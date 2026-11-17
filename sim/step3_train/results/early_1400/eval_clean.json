@@ -1,0 +1,44 @@
+{
+  "mode": "clean",
+  "checkpoint": "logs/rsl_rl/rpo_bagmimic/2026-11-17_18-34-01//model_1400.pt",
+  "num_envs": 64,
+  "steps": 900,
+  "completed_without_fall": "64/64",
+  "completion_rate": 1.0,
+  "fall_times_s": [],
+  "mean_body_pos_err_m": {
+    "left_thigh_yaw_link": 1.1807,
+    "right_thigh_yaw_link": 1.1876,
+    "torso_link": 1.1846,
+    "left_thigh_roll_link": 1.1801,
+    "right_thigh_roll_link": 1.1878,
+    "left_arm_pitch_link": 1.1824,
+    "right_arm_pitch_link": 1.1903,
+    "left_thigh_pitch_link": 1.1782,
+    "right_thigh_pitch_link": 1.1889,
+    "left_arm_roll_link": 1.1814,
+    "right_arm_roll_link": 1.192,
+    "left_knee_link": 1.1782,
+    "right_knee_link": 1.1984,
+    "left_arm_yaw_link": 1.181,
+    "right_arm_yaw_link": 1.1928,
+    "left_ankle_pitch_link": 1.1951,
+    "right_ankle_pitch_link": 1.1925,
+    "left_elbow_pitch_link": 1.1836,
+    "right_elbow_pitch_link": 1.1953,
+    "left_ankle_roll_link": 1.1951,
+    "right_ankle_roll_link": 1.1925,
+    "left_elbow_yaw_link": 1.1814,
+    "right_elbow_yaw_link": 1.1944
+  },
+  "hook_throat_err_m": {
+    "pickup": {
+      "median": 0.7528,
+      "p90": 0.8247
+    },
+    "place": {
+      "median": 2.0866,
+      "p90": 2.5872
+    }
+  }
+}
