@@ -106,3 +106,19 @@ Chronological record of what was done, why, and what was found. Newest at the bo
   OK, but found the forearm capsule overlapping the hook flange by 3.1 cm in every pose → hook collision
   geometry clipped to x ≥ 4 cm (6 pieces). Left forearm roll artifact held at 0. Deploy entry/exit poses
   checked (same range as Roboparty's motions). Details: addendum in `docs/step2_gmr.md`.
+
+## 2026-11-17: Step 3 (imitation training) started
+
+- Pre-run local checks: training-URDF collision shapes OK (see step 2 addendum); deploy switches into motion
+  policies at frame 0 with no blend and holds the last frame.
+- VM start hit an L4 stockout in us-central1-b; started on the 20th retry (18:18 UTC).
+- `sim/step3_train/vm_setup.sh`: Isaac Lab v3.0.0 + roboparty_train 53b411a (robolab 45cdc13, rsl_rl 9fb0cc6,
+  rpo_description 8e0f8f7), MJWarp backend. First attempt failed on a typo in a pinned SHA (mine); pins are
+  now taken from the local checkout.
+- Our task `RPO-BagMimic` (`sim/step3_train/bagmimic`) = stock `RPO-BeyondMimic` + hooked URDF + our motion;
+  robolab not edited. `check_env.py`: 24 bodies / 23 joints (hook merged into `right_elbow_yaw_link`; nominal
+  mass 0.7417 kg = forearm 0.6815 + hook 0.0603), motion 850 frames mapped by name onto 23 bodies.
+  Importer note: URDF importer 3.0 ignores `replace_cylinders_with_capsules` (arms stay cylinders).
+- Smoke tests: stock RPO-BeyondMimic and RPO-BagMimic, 10 iterations each, ≈ 1.45 s/iteration at 4096 envs.
+- Full run launched 18:34 UTC, `--max_iterations=15000` (ETA ≈ 6.5 h, ≈ $5.5); watchdog shuts the VM down
+  30 min after training exits; hard cap 02:04 UTC. Plan: evaluate checkpoints and stop early on plateau.
