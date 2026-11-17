@@ -1,0 +1,53 @@
+# Step 4: Bag + bag-mass randomization + domain randomization (design, in progress)
+
+Approved to start right after step 3 finishes (user, 2026-11-17).
+
+## Why step 4 needs task rewards, not just a bag
+
+Your video shows a hand grasping a handle, not a hook. Replaying the reference motion with a handle placed in
+front of the robot:
+- The hook comes down almost vertically (27 cm in the last 1.2 s before pickup), so a handle where the hook
+  bottoms out is hit from above.
+- A search over 1,485 handle placements (position ±5 cm, height +0–4 cm, yaw ±30°) found only **6** that the
+  reference hook path threads (clear on the way down, seated on the lift), with **4 mm** clearance.
+- The step 3 policy places the hook ≈ 13 cm from the reference at pickup (mostly whole-body lag), so tracking
+  alone won't hook reliably. The policy has to learn to hook, which is what the task rewards below are for.
+
+## Bag model (`sim/step4_bag/make_bag.py` → `assets/bag.urdf`, `bag_placement.json`)
+
+- Box 0.30 × 0.12 × 0.24 m, two handle posts and a crossbar (radius 6 mm, 12 cm wide) with the bar at
+  **0.362 m**, matching the step 2 agreement (handle ≈ 0.35 m).
+- Pickup placement = best of the 6 candidates (yaw +30° from the hook's bar axis, 3.5 cm above the throat's
+  lowest point). Robot-vs-bag clearance along the reference approach: hook 4 mm, knees/feet ≥ 3 cm.
+- Set-down spot = under the hook at the reference set-down (1.6 m from pickup). The release lets the bag drop ≈ 7 cm.
+- Phase frames (50 Hz): lift **272** (5.44 s), set-down **665** (13.30 s), release **676** (13.52 s).
+- Isaac Lab 3.0's URDF importer always builds an articulation, so the bag is a **0-joint articulation**.
+
+## Task `RPO-BagCarry` (`sim/step4_bag/bagcarry`)
+
+- Everything from step 3 (`RPO-BagMimic`: tracking rewards, walking fix, robolab's domain randomization)
+  plus:
+- **Bag at every reset in the state matching the sampled clip time:** on the floor (start), hanging from
+  the reference hook (carry), or on the floor (after release).
+- **Bag mass uniform 0.5–2.0 kg**, sampled per environment at startup (4,096 envs cover the range).
+- **Domain randomization already in robolab's task, kept:** ground friction 0.3–1.6, link mass ×0.8–1.2,
+  torso mass ±1 kg, torso/base COM ±3–5.5 cm, motor stiffness/damping ×0.8–1.2, armature ×0.8–1.2,
+  default joint offsets ±0.01 rad, random pushes (≤ 0.5 m/s every 1–3 s), observation noise, actuator delay
+  (DelayedPD).
+- **New rewards:** hook-to-handle distance (std 5 cm, from 1.2 s before lift to release); bag lifted
+  (height/15 cm, during the carry); bag placed upright near the set-down spot (after release); penalty for
+  knocking the bag over before the lift.
+- **New termination:** bag back on the floor in mid-carry (dropped).
+- **Observations unchanged** (proprioception + motion command), so training resumes from the step 3
+  checkpoint and the policy only needs encoders + IMU on the robot.
+
+## Verified on the VM (`check_bag.py`, 4 envs, robot holding reference joint targets, no policy)
+
+Bag spawns in all three phases. A hanging bag stays seated on the hook (handle 1–14 mm from the throat) while
+the arm moves and the robot falls. Random masses: 0.68 / 0.56 / 1.45 / 0.72 kg.
+
+## Evaluation plan
+
+Full clip from frame 0 at **0.5, 1.0, 1.5, 2.0 kg** and **1.25 kg** (inside the training range, so an
+interpolation test as in the contract), clean and with training randomization. Success = hooked and lifted
+≥ 10 cm during the carry, bag set down upright within 0.4 m of the spot, robot standing at the end, no fall.
