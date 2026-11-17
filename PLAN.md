@@ -16,7 +16,7 @@ Progress and decisions are logged in [`docs/WORKLOG.md`](docs/WORKLOG.md).
 | D4 | One cloud GPU VM, `hcr-gpu` (GCP us-central1-b, 1× L4 24 GB; see WORKLOG). Training runs on Isaac Lab 3.0 with the **MuJoCo Warp (Newton)** backend (robolab's default), so an RTX card is not required |
 | D5 | **URDF joint limits are the source of truth** (`rpo_description/urdf/rpo.urdf`). robolab trains on them at 0.9 × range. `robot/mjcf/rpo_hook.xml` and the GMR robot model use the same limits |
 | D6 | **One continuous clip** (walk → hook → carry → place) |
-| D7 | Source video: **`Videos/IMG_0532.mp4`** (side view, static camera, whole body in frame, bag in the **right** hand, hand comes palm-up under the handle like a hook). 0531 is the backup. Final choice is made on GVHMR output quality |
+| D7 | Source video: **`Videos/IMG_0531.mp4`** (approved at Gate 1, 2026-11-17): side view, static camera, right-hand one-handed carry, no vertical drift in GVHMR. IMG_0532 was the first choice but floated ≈ 10 cm |
 | D8 | Bag mass randomized over **0.5–2.0 kg** |
 | D9 | Git: commit on `main` only, **push later** in one batch |
 

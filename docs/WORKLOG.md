@@ -83,3 +83,15 @@ Chronological record of what was done, why, and what was found. Newest at the bo
 - Ran GVHMR on the VM (≈ 25 min of VM time, then stopped). Install fixes recorded in `vm_setup.sh`.
 - Results + full report: `docs/step1_gvhmr.md`. **Recommendation: switch to IMG_0531** (no vertical
   drift, cleaner right-hand signal, longer carry). One-handed, right-hand carry confirmed.
+
+## 2026-11-17: Gate 1 approved (IMG_0531); Step 2 (GMR) run, awaiting Gate 2 approval
+
+- Pushed all commits to GitHub at the user's request (`491215a..94c0e77`).
+- GMR installed locally (`~/HCR/third_party/GMR` @ f7bfaea, own venv, CPU). Robot `rpo_hook` registered at
+  runtime with 0.9 × URDF joint ranges.
+- First run with Roboparty's IK config: robot floated 9–21 cm (GVHMR ground), joint-speed spikes, hook 20 cm
+  higher at set-down than at pickup.
+- Fixes: post-processing (low-pass, per-frame grounding, re-clamp); IK change: human right wrist →
+  `right_hook_link`, weights 50/2 (set-down gap 20 → 11 cm; remaining gap from ankle-pitch soft limit).
+- Converted with robolab's own `convert_motion.py` → `bag_pickup_IMG_0531.npz`; verified to 1 mm vs our FK.
+- Full report: `docs/step2_gmr.md`.

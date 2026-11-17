@@ -1,0 +1,9 @@
+{
+  "gvhmr": "motion/step1_gvhmr/results/IMG_0531/hmr4d_results.pt",
+  "ik_config": "/home/arya/HCR/HCR-FinalProject/motion/step2_gmr/configs/smplx_to_rpo_hook.json",
+  "fps": 50.0,
+  "frames": 851,
+  "human_height_m": 1.6376570463180542,
+  "soft_limit_factor": 0.9,
+  "gmr_commit": "f7bfaea"
+}
