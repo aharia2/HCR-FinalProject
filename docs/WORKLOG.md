@@ -73,3 +73,13 @@ Chronological record of what was done, why, and what was found. Newest at the bo
 - Commands (from this machine, `gcloud` at `~/google-cloud-sdk/bin/gcloud`):
   `gcloud compute instances start|stop hcr-gpu --zone=us-central1-b`,
   `gcloud compute ssh hcr-gpu --zone=us-central1-b`.
+
+## 2026-11-17: Step 1 (GVHMR) run, awaiting Gate 1 approval
+
+- Body models received (SMPL-X v1.1 npz+pkl, SMPL v1.1.0 python); unpacked to `body_models/` (git-ignored,
+  license forbids redistribution). Wrong first download (SMPL v1.0.0, no neutral model) deleted.
+- GVHMR checkpoints: Google Drive rate-limited → Hugging Face mirror `camenduru/GVHMR`, SHA-256 matched
+  across two independent mirrors.
+- Ran GVHMR on the VM (≈ 25 min of VM time, then stopped). Install fixes recorded in `vm_setup.sh`.
+- Results + full report: `docs/step1_gvhmr.md`. **Recommendation: switch to IMG_0531** (no vertical
+  drift, cleaner right-hand signal, longer carry). One-handed, right-hand carry confirmed.

@@ -1,0 +1,159 @@
+== Tue Nov 17 06:18:01 AM UTC 2026 system packages
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== uv
+downloading uv 0.13.8 x86_64-unknown-linux-gnu
+installing to /home/arya/.local/bin
+  uv
+  uvx
+everything's installed!
+
+To add $HOME/.local/bin to your PATH, either restart your shell or run:
+
+    source $HOME/.local/bin/env (sh, bash, zsh)
+    source $HOME/.local/bin/env.fish (fish)
+== GVHMR @ ee960bb6e2ea2d381aa97f08e9b71ef320b624b1
+== Python 3.10 env (GVHMR's pytorch3d wheel is cp310 / cu121 / torch 2.3.0)
+error: Failed to build `chumpy==0.70`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta:__legacy__.get_requires_for_build_wheel` failed (exit status: 1)
+
+         [stderr]
+         Traceback (most recent call last):
+           File "<string>", line 9, in <module>
+         ModuleNotFoundError: No module named 'pip'
+
+         During handling of the above exception, another exception occurred:
+
+         Traceback (most recent call last):
+           File "<string>", line 14, in <module>
+           File "/home/arya/.cache/uv/builds-v0/.tmpXvCRI2/lib/python3.10/site-packages/setuptools/build_meta.py", line 334, in get_requires_for_build_wheel
+             return self._get_build_requires(config_settings, requirements=[])
+           File "/home/arya/.cache/uv/builds-v0/.tmpXvCRI2/lib/python3.10/site-packages/setuptools/build_meta.py", line 304, in _get_build_requires
+             self.run_setup()
+           File "/home/arya/.cache/uv/builds-v0/.tmpXvCRI2/lib/python3.10/site-packages/setuptools/build_meta.py", line 522, in run_setup
+             super().run_setup(setup_script=setup_script)
+           File "/home/arya/.cache/uv/builds-v0/.tmpXvCRI2/lib/python3.10/site-packages/setuptools/build_meta.py", line 320, in run_setup
+             exec(code, locals())
+           File "<string>", line 11, in <module>
+         ModuleNotFoundError: No module named 'pip'
+
+hint: This error likely indicates that `chumpy@0.70` depends on `pip`, but doesn't declare it as a build dependency. If `chumpy` is a first-party package, consider adding `pip` to its `build-system.requires`. Otherwise, either add it to your `pyproject.toml` under:
+
+[tool.uv.extra-build-dependencies]
+chumpy = ["pip"]
+
+or `uv pip install pip` into the environment and re-run with `--no-build-isolation`.
+FAILED at line 27
+=== retry
+== Tue Nov 17 06:19:32 AM UTC 2026 system packages
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== uv
+downloading uv 0.13.8 x86_64-unknown-linux-gnu
+installing to /home/arya/.local/bin
+  uv
+  uvx
+everything's installed!
+== GVHMR @ ee960bb6e2ea2d381aa97f08e9b71ef320b624b1
+== Python 3.10 env (GVHMR's pytorch3d wheel is cp310 / cu121 / torch 2.3.0)
+error: Failed to create virtual environment
+  cause: A virtual environment already exists at: .venv
+
+hint: Use the `--clear` flag or set `UV_VENV_CLEAR=1` to replace the existing virtual environment
+FAILED at line 25
+=== retry 2
+== Tue Nov 17 06:19:58 AM UTC 2026 system packages
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== uv
+downloading uv 0.13.8 x86_64-unknown-linux-gnu
+installing to /home/arya/.local/bin
+  uv
+  uvx
+everything's installed!
+== GVHMR @ ee960bb6e2ea2d381aa97f08e9b71ef320b624b1
+== Python 3.10 env (GVHMR's pytorch3d wheel is cp310 / cu121 / torch 2.3.0)
+error: Failed to build `cython-bbox==0.1.5`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta:__legacy__.build_wheel` failed (exit status: 1)
+
+         [stdout]
+         running bdist_wheel
+         running build
+         running build_ext
+         Compiling src/cython_bbox.pyx because it changed.
+         [1/1] Cythonizing src/cython_bbox.pyx
+         building 'cython_bbox' extension
+         x86_64-linux-gnu-gcc -Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -fPIC -I/home/arya/GVHMR/.venv/lib/python3.10/site-packages/numpy/core/include -I/home/arya/GVHMR/.venv/include -I/usr/include/python3.10 -c src/cython_bbox.c -o build/temp.linux-x86_64-cpython-310/src/cython_bbox.o -Wno-cpp
+
+         [stderr]
+         error: [Errno 2] No such file or directory: 'x86_64-linux-gnu-gcc'
+
+hint: Build failures usually indicate a problem with the package or the build environment
+FAILED at line 30
+=== retry 3
+== Tue Nov 17 06:21:08 AM UTC 2026 system packages
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== uv
+downloading uv 0.13.8 x86_64-unknown-linux-gnu
+installing to /home/arya/.local/bin
+  uv
+  uvx
+everything's installed!
+== GVHMR @ ee960bb6e2ea2d381aa97f08e9b71ef320b624b1
+== Python 3.10 env (GVHMR's pytorch3d wheel is cp310 / cu121 / torch 2.3.0)
+error: Failed to build `cython-bbox==0.1.5`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta:__legacy__.build_wheel` failed (exit status: 1)
+
+         [stdout]
+         running bdist_wheel
+         running build
+         running build_ext
+         building 'cython_bbox' extension
+         x86_64-linux-gnu-gcc -Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -fPIC -I/home/arya/GVHMR/.venv/lib/python3.10/site-packages/numpy/core/include -I/home/arya/GVHMR/.venv/include -I/usr/include/python3.10 -c src/cython_bbox.c -o build/temp.linux-x86_64-cpython-310/src/cython_bbox.o -Wno-cpp
+
+         [stderr]
+         src/cython_bbox.c:44:10: fatal error: Python.h: No such file or directory
+            44 | #include "Python.h"
+               |          ^~~~~~~~~~
+         compilation terminated.
+         error: Command '['x86_64-linux-gnu-gcc', '-Wno-unused-result', '-Wsign-compare', '-DNDEBUG', '-g', '-fwrapv', '-O2', '-Wall', '-g', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-g', '-fwrapv', '-O2', '-fPIC', '-I/home/arya/GVHMR/.venv/lib/python3.10/site-packages/numpy/core/include', '-I/home/arya/GVHMR/.venv/include', '-I/usr/include/python3.10', '-c', 'src/cython_bbox.c', '-o', 'build/temp.linux-x86_64-cpython-310/src/cython_bbox.o', '-Wno-cpp']' returned non-zero exit status 1.
+
+hint: This error likely indicates that you need to install a library that provides `Python.h` for `cython-bbox@0.1.5`
+FAILED at line 30
+=== retry 4
+== Tue Nov 17 06:22:18 AM UTC 2026 system packages
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== uv
+downloading uv 0.13.8 x86_64-unknown-linux-gnu
+installing to /home/arya/.local/bin
+  uv
+  uvx
+everything's installed!
+== GVHMR @ ee960bb6e2ea2d381aa97f08e9b71ef320b624b1
+== Python 3.10 env (GVHMR's pytorch3d wheel is cp310 / cu121 / torch 2.3.0)
+== checkpoints from HF mirror (camenduru/GVHMR @ 21b32d5389e2e59c0737d4c4095bbc0b8c23f66b), skipping DPVO (static camera)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+gvhmr/gvhmr_siga24_release.ckpt: OK
+hmr2/epoch=10-step=25000.ckpt: OK
+vitpose/vitpose-h-multi-coco.pth: OK
+yolo/yolov8x.pt: OK
+== body models
+body_models/smpl/:
+total 724440
+-rw-r--r-- 1 arya arya 247530000 Nov 17 06:17 SMPL_FEMALE.pkl
+-rw-r--r-- 1 arya arya 247101031 Nov 17 06:17 SMPL_MALE.pkl
+-rwxr-xr-- 1 arya arya 247186228 Nov 17 06:17 SMPL_NEUTRAL.pkl
+
+body_models/smplx/:
+total 318668
+-rwxr-x--- 1 arya arya 108794146 Nov 17 06:17 SMPLX_FEMALE.npz
+-rwxr-x--- 1 arya arya 108753445 Nov 17 06:17 SMPLX_MALE.npz
+-rwxr-x--- 1 arya arya 108752058 Nov 17 06:16 SMPLX_NEUTRAL.npz
+== torch / CUDA check
+torch 2.3.0+cu121 cuda True NVIDIA L4
+== Tue Nov 17 06:24:43 AM UTC 2026 setup done

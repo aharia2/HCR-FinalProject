@@ -1,0 +1,47 @@
+{
+  "clip": "IMG_0532",
+  "frames": 503,
+  "duration_s": 16.77,
+  "standing_height_head_m": 1.635,
+  "pelvis_path_length_m": 3.904,
+  "pelvis_net_displacement_m": 2.197,
+  "squats": [
+    {
+      "t_start": 4.6,
+      "t_end": 10.23,
+      "t_min": 5.97,
+      "pelvis_min_m": 0.73,
+      "r_wrist_height_m": 0.565,
+      "l_wrist_height_m": 0.588
+    },
+    {
+      "t_start": 12.4,
+      "t_end": 13.93,
+      "t_min": 13.37,
+      "pelvis_min_m": 0.779,
+      "r_wrist_height_m": 0.679,
+      "l_wrist_height_m": 0.774
+    }
+  ],
+  "carry": {
+    "t": [
+      10.2,
+      12.4
+    ],
+    "r_wrist_mean_height_m": 1.137,
+    "l_wrist_mean_height_m": 0.932,
+    "wrist_separation_mean_m": 0.648,
+    "pelvis_distance_m": 0.879
+  },
+  "foot_sliding": {
+    "l_foot": {
+      "contact_frac": 0.00597609561752988,
+      "median_speed_in_contact_mps": 0.22044694423675537
+    },
+    "r_foot": {
+      "contact_frac": 0.06374501992031872,
+      "median_speed_in_contact_mps": 0.009098269045352936
+    }
+  },
+  "ground_penetration_min_m": 0.0
+}
