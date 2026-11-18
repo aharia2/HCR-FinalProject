@@ -216,6 +216,21 @@ def bag_dropped(env):
     return c.was_lifted & (c.bag_height < 0.03) & (_window(c, F["lift"] + 50, F["place_min"] - 25) > 0)
 
 
+def sim_unstable(env):
+    """Reset envs whose physics blew up (non-finite or extreme robot/bag state) BEFORE observations are computed.
+    v7 crashed at iteration ~21710 with NaN in the policy observations (one env out of 4096)."""
+    c = _cmd(env)
+    r = c.robot.data
+    vals = [r.joint_pos.torch, r.joint_vel.torch, r.root_pos_w.torch, c.bag_pos_w, c.bag.data.root_lin_vel_w.torch]
+    bad = torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+    for v in vals:
+        bad |= ~torch.isfinite(v).all(-1)
+    bad |= r.joint_vel.torch.abs().amax(-1) > 100.0
+    bad |= c.bag.data.root_lin_vel_w.torch.norm(dim=-1) > 20.0
+    bad |= (c.bag_pos_w - env.scene.env_origins).abs().amax(-1) > 50.0
+    return bad
+
+
 @configclass
 class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
     def __post_init__(self):
@@ -255,6 +270,7 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
         self.terminations.bag_dropped = DoneTerm(func=bag_dropped)
+        self.terminations.sim_unstable = DoneTerm(func=sim_unstable)
         # v3: policy + critic see the fixed task target (appended LAST so step-3 weights can be padded with zeros)
         self.observations.policy.target_handle_b = ObsTerm(func=target_handle_b, noise=Unoise(n_min=-0.01, n_max=0.01))
         self.observations.critic.target_handle_b = ObsTerm(func=target_handle_b)

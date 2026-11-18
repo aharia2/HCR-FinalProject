@@ -276,3 +276,9 @@ envs and saves the first *successful* env's trajectory for rendering (key `saved
 half-width 2 cm + post radius 6 mm leaves ±3.4 cm) and stay ≥ 1.5 cm under the bar.
 
 Video of the first full success: `results/v7_21600/full_task_success_1kg.mp4`.
+
+**v7 crash and resume (10:18 UTC):** at iteration ≈ 21710, rsl_rl stopped with "observation group 'policy'
+contains NaN": one of 4096 envs blew up physically. Added the termination `sim_unstable`: non-finite
+robot/bag state, |joint vel| > 100 rad/s, bag speed > 20 m/s, or bag > 50 m away. Termination resets the env
+before observations are computed. Resumed from `model_21600.pt` for 2400 iterations (v7b, 10:20 UTC).
+`vm_eval_final.sh` then runs the gate-4 test matrix on the last checkpoint and shuts the VM down.
