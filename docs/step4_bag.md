@@ -51,3 +51,26 @@ the arm moves and the robot falls. Random masses: 0.68 / 0.56 / 1.45 / 0.72 kg.
 Full clip from frame 0 at **0.5, 1.0, 1.5, 2.0 kg** and **1.25 kg** (inside the training range, so an
 interpolation test as in the contract), clean and with training randomization. Success = hooked and lifted
 ≥ 10 cm during the carry, bag set down upright within 0.4 m of the spot, robot standing at the end, no fall.
+
+## Run v1 (00:54–01:30 UTC, stopped at iteration ≈ 15550)
+
+Resumed from the final step 3 policy (`model_14999.pt`). After ≈ 550 iterations:
+- 84–94% of episodes ended in `bag_dropped`; mean episode 115 → 200 steps (step 3: ≈ 990).
+- Body tracking error rose from 4.1 to 7.5 cm, and the fine hook reward fell (0.021 → 0.008).
+- Frame-0 test at 1 kg (`results/early_15400/`): 0/64 hooked. At pickup the torso was 45 cm to the side of the
+  reference, and the hook was never closer than 45 cm to the handle (step 3 alone: 25–30 cm).
+
+Causes found:
+1. **Spawn bug:** a hanging bag was placed on the *reference* hook, but the robot starts at the reference
+   pose plus training noise (root ±5 cm, joints ±0.1 rad, initial velocity), so most hanging bags spawned off
+   the real hook and fell immediately.
+2. **Termination too strict:** any episode that hadn't hooked the bag ended 1 s after the lift, which cut
+   off the rest of the clip and its tracking reward, so walking quality dropped.
+3. **No gradient toward the handle:** with a 5 cm kernel, the hook reward is ≈ 0 at 25 cm.
+
+## Run v2 (from 01:33 UTC, again resumed from `model_14999.pt`)
+
+- Hanging bags spawn on the robot's actual hook; forward kinematics is refreshed after the reset.
+- `bag_dropped` fires only if the bag was carried (≥ 5 cm) earlier in the episode.
+- New `hook_to_handle_coarse` reward: std 25 cm, weight 1, from 2 s before the lift to 0.4 s after.
+- Everything else unchanged.

@@ -57,6 +57,7 @@ class BagMotionCommand(MotionCommand):
         self.drop_pos = torch.tensor(PLACE["drop"]["pos"], device=dev)
         self.drop_yaw = torch.tensor(PLACE["drop"]["yaw"], device=dev)
         self.bar_local = torch.tensor([0.0, 0.0, BAR_Z], device=dev)
+        self.was_lifted = torch.zeros(self.num_envs, dtype=torch.bool, device=dev)   # bag carried this episode
 
     # --- quantities used by rewards / terminations / eval ---
     @property
@@ -106,9 +107,15 @@ class BagMotionCommand(MotionCommand):
         hang = ~before & ~after
         pos[before] = self.start_pos + org[before]; yaw[before] = self.start_yaw
         pos[after] = self.drop_pos + org[after]; yaw[after] = self.drop_yaw
+        self.was_lifted[env_ids] = hang
         if hang.any():
+            # Hang the bag on the ROBOT's hook. The robot was just reset to the reference pose PLUS start noise
+            # (root ±5 cm / small rotations, joints ±0.1 rad); super() refreshed forward kinematics, so the
+            # robot's body poses are current. (v1 used the reference hook here, so most hanging bags spawned
+            # a few cm off the real hook and fell at once.)
             ids = env_ids[hang]
-            p, q = self.body_pos_w[ids, self.forearm_ref], self.body_quat_w[ids, self.forearm_ref]
+            p = self.robot.data.body_pos_w.torch[ids, self.forearm_robot]
+            q = self.robot.data.body_quat_w.torch[ids, self.forearm_robot]
             throat = p + quat_apply(q, self.throat_local.expand(len(ids), 3))
             hy = quat_apply(q, torch.tensor([0.0, 1.0, 0.0], device=self.device).expand(len(ids), 3))
             yaw[hang] = torch.atan2(hy[:, 1], hy[:, 0])
@@ -132,10 +139,10 @@ def _window(cmd, a, b):
     return ((cmd.time_steps >= a) & (cmd.time_steps < b)).float()
 
 
-def hook_to_handle(env, std: float):
+def hook_to_handle(env, std: float, start: int = F["lift"] - 60, end: int = F["release"]):
     c = _cmd(env)
     d2 = ((c.robot_throat_w - c.bar_w) ** 2).sum(-1)
-    return torch.exp(-d2 / std ** 2) * _window(c, F["lift"] - 60, F["release"])
+    return torch.exp(-d2 / std ** 2) * _window(c, start, end)
 
 
 def bag_lifted(env, height: float):
@@ -156,8 +163,11 @@ def bag_knocked_over(env):
 
 
 def bag_dropped(env):
+    """Bag back on the floor mid-carry AFTER having been carried this episode. Episodes that never hooked the
+    bag keep running (tracking rewards, no lift reward) instead of all ending at lift + 1 s."""
     c = _cmd(env)
-    return (c.bag_height < 0.03) & (_window(c, F["lift"] + 50, F["place_min"] - 25) > 0)
+    c.was_lifted |= c.bag_height > 0.05
+    return c.was_lifted & (c.bag_height < 0.03) & (_window(c, F["lift"] + 50, F["place_min"] - 25) > 0)
 
 
 @configclass
@@ -180,6 +190,9 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
             func=mdp.randomize_rigid_body_mass, mode="startup",
             params={"asset_cfg": SceneEntityCfg("bag"), "mass_distribution_params": MASS_RANGE, "operation": "abs"})
         self.rewards.hook_to_handle = RewTerm(func=hook_to_handle, weight=1.0, params={"std": 0.05})
+        # coarse guidance on the approach: the 5 cm kernel gives no gradient from 25+ cm away
+        self.rewards.hook_to_handle_coarse = RewTerm(func=hook_to_handle, weight=1.0, params={
+            "std": 0.25, "start": F["lift"] - 100, "end": F["lift"] + 20})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
