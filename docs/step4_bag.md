@@ -245,3 +245,6 @@ Supporting changes:
   following the reference hook path there threads and releases the handle.
 - Knocked-over penalty back to −1.
 - Training restarts from the **step 3 policy** (padded), not v5, which had learned to keep away from the bag.
+- v6 started 06:38 UTC from `step3_final_padded.pt` (5000 iterations). The env config confirms
+  `bag_pickup_IMG_0531_hook.npz`. Fixed in `swap_step4_run.sh`: with no previous run the saved PID was 0, and
+  `kill 0` killed the script's own process group (and the SSH session).

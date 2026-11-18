@@ -3,9 +3,11 @@
 # checkpoint. Usage: swap_step4_run.sh [tag]   (v3+: the checkpoint is padded for the extra observation first)
 set -u
 for W in $(pgrep -f "watchdog.sh"); do kill "$W"; done; echo "watchdogs stopped"
-OLD=$(cat ~/train_bag.pid)
-kill "$OLD"; for i in $(seq 1 30); do kill -0 "$OLD" 2>/dev/null || break; sleep 1; done
-kill -0 "$OLD" 2>/dev/null && { echo "old run still alive"; exit 1; } || echo "old run ($OLD) stopped"
+OLD=$(cat ~/train_bag.pid 2>/dev/null || echo 0)
+if [ "${OLD:-0}" -gt 1 ] && kill -0 "$OLD" 2>/dev/null; then   # never "kill 0" (= own process group)
+  kill "$OLD"; for i in $(seq 1 30); do kill -0 "$OLD" 2>/dev/null || break; sleep 1; done
+  kill -0 "$OLD" 2>/dev/null && { echo "old run still alive"; exit 1; } || echo "old run ($OLD) stopped"
+else echo "no old run"; fi
 TAG=${1:-v2}
 mv ~/train_bag.log ~/train_bag_s4_before_$TAG.log
 CK=~/roboparty_train/logs/rsl_rl/rpo_bagmimic_walk/2026-11-17_19-14-00/model_14999.pt
