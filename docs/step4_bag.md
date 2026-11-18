@@ -74,3 +74,25 @@ Causes found:
 - `bag_dropped` fires only if the bag was carried (≥ 5 cm) earlier in the episode.
 - New `hook_to_handle_coarse` reward: std 25 cm, weight 1, from 2 s before the lift to 0.4 s after.
 - Everything else unchanged.
+
+## Run v2 → v3: the policy gets the fixed bag position (user decision, 02:00 UTC)
+
+v2 after ≈ 400 iterations: carrying improved a lot (mean episode 520 steps, hook and lift rewards ×10 vs v1), but
+pickup from the floor didn't. Frame-0 test at 1 kg (`results/v2_15400/`): 0/64 hooked, closest hook–handle
+approach 35 cm, and early anchor terminations at 2–4 s.
+
+Root problem: the policy was **blind** (joints + IMU only). Even the best step 3 policy is 10–15 cm from the
+reference at pickup, and the hook must land within a few cm of the handle.
+
+**User decision:** the bag and the robot always start at fixed positions (bag ≈ 1 m in front), so give the robot
+the bag's position.
+
+v3 implementation:
+- New observation `target_handle_b` (policy + critic): the handle position, in the robot torso frame, for the
+  current target. Before the lift that is the pickup handle; afterwards it is the set-down spot (handle height).
+  Both are fixed points relative to the start, so on hardware this needs **odometry (leg kinematics + IMU) + the
+  known placement**, with no camera or bag sensing.
+- Odometry error in training: a per-episode constant offset of ±3 cm in x and y, plus ±1 cm per-step noise.
+- The new term is appended last. `pad_checkpoint.py` adds zero input weights (actor 121 → 124, critic
+  340 → 343, plus Adam buffers), so v3 starts exactly from the step 3 policy.
+- All v2 fixes kept. Started at ≈ 02:05 UTC with 5000 iterations (`swap_step4_run.sh v3`).

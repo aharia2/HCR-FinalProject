@@ -1,8 +1,9 @@
 """RPO-BagCarry (step 4): RPO-BagMimic (step 3) + a bag with a handle + bag-mass randomization + task rewards.
 
-Policy and critic observations are UNCHANGED from step 3 (proprioception + motion command only, no bag state),
-so training resumes from the step 3 checkpoint and the policy stays deployable with encoders + IMU only.
-The policy must hook the bag by tracking the motion precisely and feel the bag through its joints.
+Observations = step 3 (proprioception + motion command) + ONE extra term (v3): the fixed task target (pickup handle
+until the lift, set-down spot after) in the robot torso frame. The bag and the robot start at fixed positions, so on
+hardware this needs only odometry + the known placement (no bag sensing). The step 3 checkpoint is padded with zero
+input weights for the new term (`pad_checkpoint.py`), so training still starts from the step 3 policy.
 
 Bag phases follow the reference time step (50 Hz, frames from bag_placement.json):
   t <  lift     bag stands at the pickup spot          t in [lift, release)  bag hangs from the reference hook
@@ -17,11 +18,13 @@ import gymnasium as gym
 import torch
 from isaaclab.assets import ArticulationCfg
 from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
-from isaaclab.utils.math import quat_apply
+from isaaclab.utils.math import quat_apply, quat_apply_inverse
+from isaaclab.utils.noise import UniformNoiseCfg as Unoise
 import isaaclab.sim as sim_utils
 
 from bagmimic import RPOBagMimicEnvCfg, RPOBagMimicPPORunnerCfg
@@ -35,6 +38,7 @@ F = PLACE["frames"]
 BAR_Z = PLACE["geometry"]["bar_z"]
 THROAT_IN_FOREARM = PLACE["hook"]["throat_in_forearm"]
 MASS_RANGE = (0.5, 2.0)
+ODO_DRIFT = 0.03          # per-episode odometry error on the target observation, ±3 cm in x and y
 
 
 def yaw_quat_xyzw(yaw: torch.Tensor) -> torch.Tensor:          # Isaac Lab 3.0 quaternions are (x, y, z, w)
@@ -58,6 +62,10 @@ class BagMotionCommand(MotionCommand):
         self.drop_yaw = torch.tensor(PLACE["drop"]["yaw"], device=dev)
         self.bar_local = torch.tensor([0.0, 0.0, BAR_Z], device=dev)
         self.was_lifted = torch.zeros(self.num_envs, dtype=torch.bool, device=dev)   # bag carried this episode
+        # Fixed task targets (bag start and set-down spot are fixed relative to the robot's start, as on the real
+        # setup). The policy sees the current target's handle position in its torso frame; on hardware this comes
+        # from leg/IMU odometry + the known placement. odo_offset emulates a per-episode odometry error.
+        self.odo_offset = torch.zeros(self.num_envs, 3, device=dev)
 
     # --- quantities used by rewards / terminations / eval ---
     @property
@@ -92,6 +100,15 @@ class BagMotionCommand(MotionCommand):
     def bag_height(self):            # bag origin = bottom centre; 0 when standing on the floor
         return self.bag_pos_w[:, 2] - self._env.scene.env_origins[:, 2]
 
+    @property
+    def target_handle_w(self):
+        """Where the handle should be: the pickup handle until the lift, the set-down handle spot afterwards."""
+        org = self._env.scene.env_origins
+        start = self.start_pos + torch.tensor([0.0, 0.0, BAR_Z], device=self.device)
+        drop = self.drop_pos + torch.tensor([0.0, 0.0, BAR_Z], device=self.device)
+        tgt = torch.where((self.time_steps < F["lift"])[:, None], start, drop)
+        return tgt + org
+
     # --- reset ---
     def _resample_command(self, env_ids):
         super()._resample_command(env_ids)
@@ -108,6 +125,7 @@ class BagMotionCommand(MotionCommand):
         pos[before] = self.start_pos + org[before]; yaw[before] = self.start_yaw
         pos[after] = self.drop_pos + org[after]; yaw[after] = self.drop_yaw
         self.was_lifted[env_ids] = hang
+        self.odo_offset[env_ids, :2] = (torch.rand(n, 2, device=self.device) * 2 - 1) * ODO_DRIFT
         if hang.any():
             # Hang the bag on the ROBOT's hook. The robot was just reset to the reference pose PLUS start noise
             # (root ±5 cm / small rotations, joints ±0.1 rad); super() refreshed forward kinematics, so the
@@ -128,6 +146,13 @@ class BagMotionCommand(MotionCommand):
 @configclass
 class BagMotionCommandCfg(MotionCommandCfg):
     class_type: type = BagMotionCommand
+
+
+# --- observation: fixed task target in the robot torso frame (+ odometry error) ---
+def target_handle_b(env):
+    c = _cmd(env)
+    rel = c.target_handle_w + c.odo_offset - c.robot_anchor_pos_w
+    return quat_apply_inverse(c.robot_anchor_quat_w, rel)
 
 
 # --- rewards / terminations (all read the command term) ---
@@ -197,6 +222,9 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
         self.terminations.bag_dropped = DoneTerm(func=bag_dropped)
+        # v3: policy + critic see the fixed task target (appended LAST so step-3 weights can be padded with zeros)
+        self.observations.policy.target_handle_b = ObsTerm(func=target_handle_b, noise=Unoise(n_min=-0.01, n_max=0.01))
+        self.observations.critic.target_handle_b = ObsTerm(func=target_handle_b)
 
 
 @configclass
