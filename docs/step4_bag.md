@@ -264,3 +264,7 @@ Supporting changes:
 **v7** (automatic continuation, `vm_chain_v6_to_v7.sh`): when v6 ends at iteration 19999, resume from its last
 checkpoint for 4000 more iterations, with extra engage-window weight (`hook_to_ref_engage` std 4 cm, weight 4;
 `hook_to_ref_engage_coarse` std 12 cm, weight 2). Everything else as v6.
+| **19998 (v6 final)** | 1/64 hooked / **1/64 full success** (pick up → carry → set down upright → unhook) | **28/64**, 64/64 no fall | – |
+
+v7 started automatically at 09:20 UTC (resumed from 19998, 4000 iterations). `eval_bagcarry.py` now records all
+envs and saves the first *successful* env's trajectory for rendering (key `saved_env`).

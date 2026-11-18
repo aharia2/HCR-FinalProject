@@ -23,7 +23,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("traj")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--ref", default=str(REPO / "motion/step2_gmr/results/IMG_0531/robot_motion_clean.npz"))
+    ap.add_argument("--ref", default=str(REPO / "motion/step2_gmr/results/IMG_0531/robot_motion_clean.npz"))  # step 4 v6+: pass IMG_0531_hook
     a = ap.parse_args()
     R = np.load(a.traj, allow_pickle=True)
     M = np.load(a.ref)

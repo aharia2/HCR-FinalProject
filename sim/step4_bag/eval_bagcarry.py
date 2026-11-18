@@ -99,15 +99,16 @@ def main(argv):
                 max_h = torch.where(alive, torch.maximum(max_h, h_up), max_h)
             if k == mid:
                 hooked_mid = alive & ((c.robot_throat_w - c.bar_w).norm(dim=-1) < 0.03)
-            q = robot.data.root_quat_w.torch[0].cpu().numpy(); bq = c.bag_quat_w[0].cpu().numpy()
+            # all envs are recorded; the first successful env (else env 0) is saved for rendering
+            q = robot.data.root_quat_w.torch.cpu().numpy(); bq = c.bag_quat_w.cpu().numpy()
             traj["t"].append(k * U.step_dt)
-            traj["root_pos"].append((robot.data.root_pos_w.torch[0] - org[0]).cpu().numpy())
-            traj["root_quat_wxyz"].append(q[[3, 0, 1, 2]])
-            traj["joint_pos"].append(robot.data.joint_pos.torch[0].cpu().numpy())
-            traj["bag_pos"].append((c.bag_pos_w[0] - org[0]).cpu().numpy())
-            traj["bag_quat_wxyz"].append(bq[[3, 0, 1, 2]])
-            traj["bag_height"].append(float(h[0]))
-            traj["hook_bar_dist"].append(float((c.robot_throat_w[0] - c.bar_w[0]).norm()))
+            traj["root_pos"].append((robot.data.root_pos_w.torch - org).cpu().numpy())
+            traj["root_quat_wxyz"].append(q[:, [3, 0, 1, 2]])
+            traj["joint_pos"].append(robot.data.joint_pos.torch.cpu().numpy())
+            traj["bag_pos"].append((c.bag_pos_w - org).cpu().numpy())
+            traj["bag_quat_wxyz"].append(bq[:, [3, 0, 1, 2]])
+            traj["bag_height"].append(h.cpu().numpy())
+            traj["hook_bar_dist"].append((c.robot_throat_w - c.bar_w).norm(dim=-1).cpu().numpy())
         dxy = c.bag_pos_w[:, :2] - org[:, :2] - c.drop_pos[:2]
         placed = (c.bag_up_z > 0.9) & (c.bag_height < 0.03) & (dxy.abs() <= 0.2).all(-1)
         standing = robot.data.root_pos_w.torch[:, 2] - org[:, 2] > 0.5
@@ -123,8 +124,11 @@ def main(argv):
         os.makedirs(args.out, exist_ok=True)
         tag = f"{args.mode}_{args.mass:g}kg" + ("_carry" if args.start == "lift" else "")
         json.dump(res, open(os.path.join(args.out, f"eval_{tag}.json"), "w"), indent=2)
+        ok = torch.nonzero(success).flatten().tolist(); e = ok[0] if ok else 0
+        res["saved_env"] = e; res["saved_env_success"] = bool(ok)
+        json.dump(res, open(os.path.join(args.out, f"eval_{tag}.json"), "w"), indent=2)
         np.savez_compressed(os.path.join(args.out, f"traj_env0_{tag}.npz"), joint_names=np.array(robot.joint_names),
-                            **{k: np.array(v) for k, v in traj.items()})
+                            saved_env=e, **{k: (np.array(v) if k == "t" else np.array(v)[:, e]) for k, v in traj.items()})
         print("RESULT", json.dumps(res))
 
 
