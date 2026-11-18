@@ -1,0 +1,21 @@
+{
+  "start": "zero",
+  "mode": "clean",
+  "mass_kg": 0.5,
+  "checkpoint": "/home/arya/roboparty_train/logs/rsl_rl/rpo_bagcarry/2026-11-18_10-20-28/model_23400.pt",
+  "num_envs": 64,
+  "success": "13/64",
+  "no_fall": "64/64",
+  "hooked_mid_carry": "9/64",
+  "lifted_10cm": "14/64",
+  "placed_upright_in_square": "14/64",
+  "standing_at_end": "64/64",
+  "max_bag_height_m": {
+    "median": 0.035,
+    "p10": 0.021
+  },
+  "drop_dist_m_median": 0.618,
+  "fall_times_s": [],
+  "saved_env": 1,
+  "saved_env_success": true
+}

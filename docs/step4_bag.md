@@ -282,3 +282,50 @@ contains NaN": one of 4096 envs blew up physically. Added the termination `sim_u
 robot/bag state, |joint vel| > 100 rad/s, bag speed > 20 m/s, or bag > 50 m away. Termination resets the env
 before observations are computed. Resumed from `model_21600.pt` for 2400 iterations (v7b, 10:20 UTC).
 `vm_eval_final.sh` then runs the gate-4 test matrix on the last checkpoint and shuts the VM down.
+
+## Step 4 final result (v7b @ 23400)
+
+**v7b crash:** at iteration 23476 rsl_rl stopped again, this time with "rewards contain NaN". The training NaN
+check runs before the env reset, so `sim_unstable` does not catch a reward that is already NaN. The last
+checkpoint, `model_23400.pt`, was evaluated (`vm_eval_final.sh`, 11:23–11:41 UTC). The VM was stopped at 11:43 UTC.
+Checkpoint saved locally at `~/hcr_ckpt/step4_v7b_23400.pt` (not in git). For any further training: put
+`nan_to_num` on the bag reward terms.
+
+Test matrix (`results/v7_final/`): 64 envs per cell. "Randomized" = training domain randomization (pushes,
+friction, mass/COM, observation noise, odometry drift). Success = bag lifted ≥ 10 cm, carried, set down upright
+inside the square, hook out, robot standing.
+
+**Full task from frame 0** (stand → hook bag → carry → set down → unhook):
+
+| Bag mass | Clean: success / no fall / lifted | Randomized: success / no fall / lifted |
+|---|---|---|
+| 0.5 kg | 13 / 64 / 14 | 15 / 63 / 17 |
+| 1.0 kg | 10 / 64 / 13 | 9 / 64 / 13 |
+| 1.25 kg | 10 / 64 / 12 | 10 / 63 / 12 |
+| 1.5 kg | 12 / 63 / 17 | 8 / 62 / 10 |
+| 2.0 kg | 11 / 63 / 15 | 11 / 62 / 17 |
+| **All** | **56/320 (17.5%)**, 318/320 no fall | **53/320 (16.6%)**, 314/320 no fall |
+
+**From the lift** (bag already on the hook; tests carry + set down + unhook):
+
+| Bag mass | Clean: success / no fall / set-down distance (median) | Randomized: success / no fall / set-down distance |
+|---|---|---|
+| 0.5 kg | 50 / 64 / 0.11 m | 38 / 64 / 0.13 m |
+| 1.0 kg | 48 / 64 / 0.09 m | 43 / 64 / 0.12 m |
+| 1.25 kg | 51 / 64 / 0.09 m | 50 / 64 / 0.09 m |
+| 1.5 kg | 55 / 64 / 0.08 m | 39 / 64 / 0.17 m |
+| 2.0 kg | 46 / 64 / 0.08 m | 40 / 64 / 0.12 m |
+| **All** | **250/320 (78%)**, 320/320 no fall | **210/320 (66%)**, 320/320 no fall |
+
+Findings:
+- Mass has little effect between 0.5 and 2 kg. Falls are rare (≤ 3/64 in any cell; none once the bag is hooked).
+- Once the bag is on the hook, carry, set-down and unhook work in about 3 of 4 runs.
+- **The bottleneck is the pickup.** Only 12–17/64 runs get the hook under the bar. Almost every lifted bag
+  is then placed (e.g. 2 kg clean: 15 lifted → 11 success). The hook's error at slide-under (≈ 5 cm with ≈ 7 cm
+  spread at 21600) is larger than the handle's capture region (±3.4 cm sideways between the posts).
+- Most likely ways to improve pickup: a wider/softer handle that matches the real bag (the sim handle is a rigid
+  12 cm bar); more training focused on the engage window; or a closed-loop correction from the bag-relative
+  observation.
+
+Videos (successful envs, `results/v7_final/`): `full_task_clean_0.5kg.mp4`, `full_task_clean_1kg.mp4`,
+`full_task_clean_2kg.mp4`, `full_task_randomized_2kg.mp4`.

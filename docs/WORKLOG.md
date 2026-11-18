@@ -143,3 +143,13 @@ Chronological record of what was done, why, and what was found. Newest at the bo
   at 8000). Videos `sim/step3_train/results/run2_final_15000/` sent.
 - Step 4 (`RPO-BagCarry`) started 00:54 UTC from `model_14999.pt`, 5000 iterations (≈ 1.8 s/it, ≈ 2.5 h).
   First 65 iterations: 94% of episodes end with `bag_dropped`, mean episode 115 steps. Watching the trend.
+
+## 2026-11-18 (01:10–11:45 UTC): step 4 iterations v1 → v7b, final evaluation
+
+- v1–v5 (reward/observation fixes, incl. the user's fixed-target observation `target_handle_b`): carry works,
+  pickup 0/64. Root cause: the human reference motion grasps, it does not hook. The user chose option 1 → hook-edited
+  reference (`motion/step2_gmr/hook_edit.py`), retrained as v6/v7. Details in `docs/step4_bag.md`.
+- v7 NaN crash at ≈ 21710 → `sim_unstable` termination, resumed as v7b; v7b NaN (rewards) at 23476.
+- Final matrix on `model_23400` (11:23–11:41 UTC): full task 56/320 clean, 53/320 randomized; from the lift
+  250/320 clean, 210/320 randomized; ≤ 6/320 falls. Videos rendered. VM stopped 11:43 UTC.
+- Waiting for the user's step 4 approval before step 5 (ONNX export, deploy config).
