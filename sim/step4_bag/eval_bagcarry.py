@@ -40,6 +40,8 @@ def main(argv):
     p.add_argument("--mode", choices=["clean", "randomized"], default="clean")
     p.add_argument("--mass", type=float, required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--start", choices=["zero", "lift"], default="zero",
+                   help="lift: start at the lift frame with the bag already on the robot's hook (carry + set-down only)")
     reg = cli_args.register_external_tasks(argv)
     args, rem = setup_preset_cli(p, argv)
     set_hydra_args(list_intersection(rem, reg))
@@ -66,12 +68,14 @@ def main(argv):
         c = U.command_manager.get_term("motion")
         robot = U.scene["robot"]
 
+        s0 = 0 if args.start == "zero" else F["lift"]
+
         def start_at_zero(ids):
-            c.time_steps[ids] = 0
+            c.time_steps[ids] = s0
         c._adaptive_sampling = start_at_zero
         U.reset()
         obs = env.get_observations()
-        N, T = U.num_envs, int(c.motion.time_step_total)
+        N, T = U.num_envs, int(c.motion.time_step_total) - s0
         org = U.scene.env_origins
         alive = torch.ones(N, dtype=torch.bool, device=U.device)
         fell_at = torch.full((N,), -1, dtype=torch.long, device=U.device)
@@ -81,7 +85,8 @@ def main(argv):
         traj = {k: [] for k in ("t", "root_pos", "root_quat_wxyz", "joint_pos", "bag_pos", "bag_quat_wxyz",
                                 "bag_height", "hook_bar_dist")}
         final = None
-        for k in range(T - 2):                       # stop before the clip end resets the episode
+        for j in range(T - 2):                       # stop before the clip end resets the episode
+            k = j + s0                               # clip frame
             with torch.inference_mode():
                 obs, _, dones, extras = env.step(policy(obs))
             to = extras.get("time_outs", torch.zeros_like(dones)).bool()
@@ -109,14 +114,14 @@ def main(argv):
         lifted = max_h >= 0.10
         success = alive & lifted & placed & standing
         f = lambda x: f"{int(x.sum())}/{N}"
-        res = dict(mode=args.mode, mass_kg=args.mass, checkpoint=args.checkpoint, num_envs=N,
+        res = dict(start=args.start, mode=args.mode, mass_kg=args.mass, checkpoint=args.checkpoint, num_envs=N,
                    success=f(success), no_fall=f(alive), hooked_mid_carry=f(hooked_mid), lifted_10cm=f(lifted),
                    placed_upright_in_square=f(placed), standing_at_end=f(standing),
                    max_bag_height_m=dict(median=round(float(max_h.median()), 3), p10=round(float(max_h.quantile(0.1)), 3)),
                    drop_dist_m_median=round(float(dxy.norm(dim=-1).median()), 3),
                    fall_times_s=sorted(round(float(x) * U.step_dt, 2) for x in fell_at[fell_at >= 0].tolist())[:30])
         os.makedirs(args.out, exist_ok=True)
-        tag = f"{args.mode}_{args.mass:g}kg"
+        tag = f"{args.mode}_{args.mass:g}kg" + ("_carry" if args.start == "lift" else "")
         json.dump(res, open(os.path.join(args.out, f"eval_{tag}.json"), "w"), indent=2)
         np.savez_compressed(os.path.join(args.out, f"traj_env0_{tag}.npz"), joint_names=np.array(robot.joint_names),
                             **{k: np.array(v) for k, v in traj.items()})

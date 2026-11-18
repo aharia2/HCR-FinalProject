@@ -52,7 +52,7 @@ Full clip from frame 0 at **0.5, 1.0, 1.5, 2.0 kg** and **1.25 kg** (inside the 
 interpolation test as in the contract), clean and with training randomization. Success = hooked and lifted
 ≥ 10 cm during the carry, bag set down upright within 0.4 m of the spot, robot standing at the end, no fall.
 
-## Run v1 (00:54–01:30 UTC, stopped at iteration ≈ 15550)
+## Run v1 (00:54–01:14 UTC, stopped at iteration ≈ 15550)
 
 Resumed from the final step 3 policy (`model_14999.pt`). After ≈ 550 iterations:
 - 84–94% of episodes ended in `bag_dropped`; mean episode 115 → 200 steps (step 3: ≈ 990).
@@ -68,14 +68,14 @@ Causes found:
    off the rest of the clip and its tracking reward, so walking quality dropped.
 3. **No gradient toward the handle:** with a 5 cm kernel, the hook reward is ≈ 0 at 25 cm.
 
-## Run v2 (from 01:33 UTC, again resumed from `model_14999.pt`)
+## Run v2 (from 01:14 UTC, again resumed from `model_14999.pt`)
 
 - Hanging bags spawn on the robot's actual hook; forward kinematics is refreshed after the reset.
 - `bag_dropped` fires only if the bag was carried (≥ 5 cm) earlier in the episode.
 - New `hook_to_handle_coarse` reward: std 25 cm, weight 1, from 2 s before the lift to 0.4 s after.
 - Everything else unchanged.
 
-## Run v2 → v3: the policy gets the fixed bag position (user decision, 02:00 UTC)
+## Run v2 → v3: the policy gets the fixed bag position (user decision; v3 started 01:37 UTC)
 
 v2 after ≈ 400 iterations: carrying improved a lot (mean episode 520 steps, hook and lift rewards ×10 vs v1), but
 pickup from the floor didn't. Frame-0 test at 1 kg (`results/v2_15400/`): 0/64 hooked, closest hook–handle
@@ -95,9 +95,9 @@ v3 implementation:
 - Odometry error in training: a per-episode constant offset of ±3 cm in x and y, plus ±1 cm per-step noise.
 - The new term is appended last. `pad_checkpoint.py` adds zero input weights (actor 121 → 124, critic
   340 → 343, plus Adam buffers), so v3 starts exactly from the step 3 policy.
-- All v2 fixes kept. Started at ≈ 02:05 UTC with 5000 iterations (`swap_step4_run.sh v3`).
+- All v2 fixes kept. Started at 01:37 UTC with 5000 iterations (`swap_step4_run.sh v3`).
 
-## Run v3 → v4: knocked-over bags were being rewarded (03:10 UTC)
+## Run v3 → v4: knocked-over bags were being rewarded (v4 started 02:20 UTC)
 
 v3 frame-0 tests at 1 kg:
 
@@ -116,7 +116,7 @@ v4 changes (resumed from v3 @ 16200, which has the same observations; 3000 more 
 - `bag_knocked_over` (tipped, `up_z < 0.7`) is penalised during the whole clip, weight −1 → **−3**.
 - `eval_bagcarry.py`: max bag height counts only an upright bag.
 
-## Run v4 → v5: hook under the handle, not onto it (03:45 UTC)
+## Run v4 → v5: hook under the handle, not onto it (v5 started 02:47 UTC)
 
 v4 @ 16800, frame-0 test at 1 kg: 62/64 no fall, **0/64 hooked**; upright bag max height 3.5 cm (median), and
 the knocked-over penalty was still large in training. Diagnosis: before the lift, the hook reward pulled the
@@ -128,3 +128,28 @@ v5 (resumed from v4 @ 17000, 2200 more iterations):
   std 5 cm, weight 2, from 1.2 s before the lift until just after it.
 - The coarse approach term (std 25 cm) now targets the same under-bar point.
 - `hook_to_handle` (seated on the bar) now applies only from the lift to the release.
+
+## v5 result and where the hook actually goes (stopped 03:17 UTC at iteration 17934)
+
+v5 @ 17600, frame-0 test at 1 kg: **64/64 no fall**, 0/64 hooked; the `hook_under_handle` reward was 0.0000
+throughout training.
+
+`measure_hook.py` (v5 @ 17800, frame 0, bag moved out of the way, all 64 envs). Policy hook minus reference
+hook:
+
+| Frame | Clean: mean offset (x, y, z) | Clean: spread p90 | Randomized: spread p90 |
+|---|---|---|---|
+| pickup_min 254 | (0.40, 0.33, 0.12) m | 0.20 m | 0.29 m |
+| lift 272 | (0.34, 0.31, 0.08) m | 0.22 m | 0.32 m |
+| release 676 | (0.34, −0.01, −0.09) m | 0.12 m | 0.22 m |
+
+Two conclusions:
+1. **The bag-carry policy moved away from the bag.** Its hook is ≈ 45 cm from the reference at pickup (step 3
+   alone: 11 cm). The tipping penalty taught it to avoid the bag, because a successful hook was never found.
+2. **Moving the bag to where the policy goes would not fix it.** Even in clean mode (only the per-env physics
+   randomization: masses, friction, motor gains), the hook position varies by 20 cm (p90) between envs. A
+   rigid handle needs a few cm.
+
+Hooking a handle from the floor with this reward design does not emerge. Carrying a bag that is already on the
+hook does work in training (hook_to_handle and bag_lifted rewards are high), so that part was measured on its
+own: `eval_bagcarry.py --start=lift` starts at the lift frame with the bag already on the robot's hook.
