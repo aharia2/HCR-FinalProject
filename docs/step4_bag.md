@@ -329,3 +329,23 @@ Findings:
 
 Videos (successful envs, `results/v7_final/`): `full_task_clean_0.5kg.mp4`, `full_task_clean_1kg.mp4`,
 `full_task_clean_2kg.mp4`, `full_task_randomized_2kg.mp4`.
+
+## v8: more pickup training (user request, 2026-11-18 evening)
+
+The user chose to keep training the pickup on the current simulated bag, then adapt to a new, more representative
+bag (a box with a rigid handle, measured by the user) over the weekend. Notes from that discussion:
+- A Whole Foods paper bag: 35 cm tall × 30 cm wide, handle 9 × 9 cm (floppy paper). A 9 cm opening leaves the hook
+  ±1.9 cm sideways (sim handle ±3.4 cm); at the measured ±3 cm sideways spread that is about half the
+  attempts vs about 3/4, so the estimate is ≈ 1 in 10 full successes. The user will look for a box with a rigid
+  handle (ideally ≥ 20 cm wide, ~36 cm top height, ≥ 6–8 cm open space under the bar).
+
+Changes (`bagcarry/__init__.py`, resumed from v7b `model_23400.pt`, 2500 iterations, started 20:03 UTC):
+- **NaN-safe rewards:** `RewardManager.compute` is wrapped with `nan_to_num`. Isaac Lab computes rewards after
+  terminations but before resets, so an env that blows up gives one NaN reward before `sim_unstable` resets it
+  (v7b crash at 23476).
+- **Pickup-focused start sampling:** 35% of resets start at frames 152–222, just before the engage manoeuvre.
+  Missing the handle does not end the episode, so robolab's failure-weighted sampling never favoured the pickup.
+  The test script overrides start sampling per instance, so tests are unaffected.
+- **Finer engage reward** `hook_to_ref_engage_fine`: std 2 cm, weight 4, frames lift−30 … lift+5.
+- `vm_eval_final.sh` runs the same test matrix afterwards and shuts the VM down. The v7b results on the VM were
+  moved to `~/eval_final_v7b/`.
