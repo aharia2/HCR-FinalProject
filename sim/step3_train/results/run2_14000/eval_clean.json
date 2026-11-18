@@ -1,0 +1,99 @@
+{
+  "mode": "clean",
+  "checkpoint": "/home/arya/roboparty_train/logs/rsl_rl/rpo_bagmimic_walk/2026-11-17_19-14-00/model_14000.pt",
+  "num_envs": 64,
+  "steps": 900,
+  "completed_without_fall": "63/64",
+  "completion_rate": 0.9844,
+  "fall_times_s": [
+    11.16
+  ],
+  "torso_path_ratio": {
+    "median": 0.9044,
+    "p90": 0.9694
+  },
+  "reference_torso_path_m": 5.549,
+  "checks": {
+    "t4": {
+      "torso_xy": {
+        "median": 0.1377,
+        "p90": 0.2388
+      },
+      "hook": {
+        "median": 0.13,
+        "p90": 0.2206
+      },
+      "hook_arm": {
+        "median": 0.0351,
+        "p90": 0.0462
+      }
+    },
+    "pickup": {
+      "torso_xy": {
+        "median": 0.1132,
+        "p90": 0.1944
+      },
+      "hook": {
+        "median": 0.0882,
+        "p90": 0.1783
+      },
+      "hook_arm": {
+        "median": 0.0512,
+        "p90": 0.0751
+      }
+    },
+    "t12": {
+      "torso_xy": {
+        "median": 0.2263,
+        "p90": 0.5301
+      },
+      "hook": {
+        "median": 0.2521,
+        "p90": 0.5523
+      },
+      "hook_arm": {
+        "median": 0.0575,
+        "p90": 0.1148
+      }
+    },
+    "place": {
+      "torso_xy": {
+        "median": 0.201,
+        "p90": 0.4898
+      },
+      "hook": {
+        "median": 0.2644,
+        "p90": 0.5767
+      },
+      "hook_arm": {
+        "median": 0.1106,
+        "p90": 0.195
+      }
+    }
+  },
+  "mean_body_pos_err_m": {
+    "left_thigh_yaw_link": 0.1683,
+    "right_thigh_yaw_link": 0.1603,
+    "torso_link": 0.1629,
+    "left_thigh_roll_link": 0.1697,
+    "right_thigh_roll_link": 0.1612,
+    "left_arm_pitch_link": 0.1699,
+    "right_arm_pitch_link": 0.1574,
+    "left_thigh_pitch_link": 0.173,
+    "right_thigh_pitch_link": 0.1605,
+    "left_arm_roll_link": 0.1741,
+    "right_arm_roll_link": 0.1558,
+    "left_knee_link": 0.1783,
+    "right_knee_link": 0.1625,
+    "left_arm_yaw_link": 0.1742,
+    "right_arm_yaw_link": 0.1547,
+    "left_ankle_pitch_link": 0.1944,
+    "right_ankle_pitch_link": 0.1623,
+    "left_elbow_pitch_link": 0.1794,
+    "right_elbow_pitch_link": 0.1548,
+    "left_ankle_roll_link": 0.1944,
+    "right_ankle_roll_link": 0.1623,
+    "left_elbow_yaw_link": 0.1782,
+    "right_elbow_yaw_link": 0.1562
+  }
+}
