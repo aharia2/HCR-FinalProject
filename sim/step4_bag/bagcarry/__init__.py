@@ -164,9 +164,13 @@ def _window(cmd, a, b):
     return ((cmd.time_steps >= a) & (cmd.time_steps < b)).float()
 
 
-def hook_to_handle(env, std: float, start: int = F["lift"] - 60, end: int = F["release"]):
+def hook_to_handle(env, std: float, start: int = F["lift"] - 60, end: int = F["release"], dz: float = 0.0):
+    """Hook throat to the handle bar shifted by dz. v5: before the lift the target is UNDER the bar (dz < 0), inside
+    the handle loop: an upward-opening hook must get under the bar and then lift; targeting the bar itself (v1–v4)
+    pulled the hook down onto the top of the handle and tipped the bag."""
     c = _cmd(env)
-    d2 = ((c.robot_throat_w - c.bar_w) ** 2).sum(-1)
+    tgt = c.bar_w + torch.tensor([0.0, 0.0, dz], device=env.device)
+    d2 = ((c.robot_throat_w - tgt) ** 2).sum(-1)
     return torch.exp(-d2 / std ** 2) * _window(c, start, end)
 
 
@@ -217,10 +221,14 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
         self.events.bag_mass = EventTerm(
             func=mdp.randomize_rigid_body_mass, mode="startup",
             params={"asset_cfg": SceneEntityCfg("bag"), "mass_distribution_params": MASS_RANGE, "operation": "abs"})
-        self.rewards.hook_to_handle = RewTerm(func=hook_to_handle, weight=1.0, params={"std": 0.05})
-        # coarse guidance on the approach: the 5 cm kernel gives no gradient from 25+ cm away
+        # seated on the bar while carrying
+        self.rewards.hook_to_handle = RewTerm(func=hook_to_handle, weight=1.0, params={
+            "std": 0.05, "start": F["lift"], "end": F["release"]})
+        # approach: under the bar (4 cm below), fine + coarse (the 5 cm kernel gives no gradient from 25+ cm away)
+        self.rewards.hook_under_handle = RewTerm(func=hook_to_handle, weight=2.0, params={
+            "std": 0.05, "start": F["lift"] - 60, "end": F["lift"] + 5, "dz": -0.04})
         self.rewards.hook_to_handle_coarse = RewTerm(func=hook_to_handle, weight=1.0, params={
-            "std": 0.25, "start": F["lift"] - 100, "end": F["lift"] + 20})
+            "std": 0.25, "start": F["lift"] - 100, "end": F["lift"] + 5, "dz": -0.04})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-3.0)

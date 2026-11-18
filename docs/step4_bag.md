@@ -115,3 +115,16 @@ v4 changes (resumed from v3 @ 16200, which has the same observations; 3000 more 
   termination.
 - `bag_knocked_over` (tipped, `up_z < 0.7`) is penalised during the whole clip, weight −1 → **−3**.
 - `eval_bagcarry.py`: max bag height counts only an upright bag.
+
+## Run v4 → v5: hook under the handle, not onto it (03:45 UTC)
+
+v4 @ 16800, frame-0 test at 1 kg: 62/64 no fall, **0/64 hooked**; upright bag max height 3.5 cm (median), and
+the knocked-over penalty was still large in training. Diagnosis: before the lift, the hook reward pulled the
+throat onto the bar itself. An upward-opening hook that goes for the bar from above presses the handle down and
+tips the bag.
+
+v5 (resumed from v4 @ 17000, 2200 more iterations):
+- New `hook_under_handle`: target 4 cm **below** the bar (inside the handle loop; the box top is 8 cm lower).
+  std 5 cm, weight 2, from 1.2 s before the lift until just after it.
+- The coarse approach term (std 25 cm) now targets the same under-bar point.
+- `hook_to_handle` (seated on the bar) now applies only from the lift to the release.
