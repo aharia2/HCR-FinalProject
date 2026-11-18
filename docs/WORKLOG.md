@@ -135,3 +135,11 @@ Chronological record of what was done, why, and what was found. Newest at the bo
 - `vm_chain_step3_to_step4.sh` running on the VM: waits for step 3 to exit, evaluates its final checkpoint,
   starts step 4 (5000 iterations, resumed from step 3) and re-arms the shutdown watchdog. Hard cap moved to
   04:45 UTC.
+
+## 2026-11-18 (00:30–01:10 UTC): step 3 finished, step 4 started
+
+- Step 3 @ 14000 evaluated on request (clean 63/64, hook at pickup 9 cm); video sent.
+- Step 3 finished 00:52 UTC (15000 iterations, 5.6 h). Final eval: clean 64/64, randomized 60/64 (was 56/64
+  at 8000). Videos `sim/step3_train/results/run2_final_15000/` sent.
+- Step 4 (`RPO-BagCarry`) started 00:54 UTC from `model_14999.pt`, 5000 iterations (≈ 1.8 s/it, ≈ 2.5 h).
+  First 65 iterations: 94% of episodes end with `bag_dropped`, mean episode 115 steps. Watching the trend.

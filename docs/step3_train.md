@@ -59,4 +59,13 @@ reference by ≈ 0.45 m, accumulated in the first ≈ 4 s after a slow start fro
 | run 2 @ 8000, clean | **64/64** | 0.88 | **0.14 m** | **0.13 m / 0.04 m** (set-down 0.26 / 0.07 m) |
 | run 2 @ 8000, randomized | **56/64** | 0.96 | 0.23 m | 0.20 m / 0.08 m (set-down 0.37 / 0.09 m) |
 
-Videos (policy right, reference left): `results/run2_8000/policy_vs_ref_{clean,randomized}.mp4` (also 4000).
+| run 2 @ 14000, clean | 63/64 (one fall at 11.2 s) | 0.90 | 0.11 m | **0.09 m** / 0.05 m (set-down 0.26 / 0.11 m) |
+| **run 2 @ 15000 (final), clean** | **64/64** | 0.87 | 0.15 m | 0.11 m / 0.05 m (set-down 0.29 / 0.15 m) |
+| **run 2 @ 15000 (final), randomized** | **60/64** (falls at 14.0–16.5 s) | 0.96 | 0.17 m | 0.16 m / 0.07 m (set-down 0.49 / 0.16 m) |
+
+Final training stats (iteration 14999): 94% of episodes reach the time limit, mean body-position error 4.1 cm.
+The final policy (`model_14999.pt`, 5.6 h on the L4) is the starting point for step 4. The remaining hook error
+at pickup/set-down is mostly whole-body drift, which step 4's hook/lift/place rewards target directly.
+
+Videos (policy right, reference left): `results/run2_final_15000/policy_vs_ref_{clean,randomized}.mp4`
+(also 14000, 8000, 4000).
