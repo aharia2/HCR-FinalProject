@@ -187,3 +187,61 @@ own: `eval_bagcarry.py --start=lift` starts at the lift frame with the bag alrea
 Both failures are about **getting the hook into and out of the handle**. The reference motion comes from a
 human hand (grasp → lift, set down → open the hand), and a hook can't copy the "close/open hand" part. The
 reference hook comes straight down onto the handle and never moves out of it.
+
+## v6: hook-edited reference motion (user chose option 1, 2026-11-18)
+
+Both failures (pickup 0/64, release never happens) come from the reference: a human hand grabs the handle and
+opens to let go, and the retargeted hook copies neither. New script `motion/step2_gmr/hook_edit.py` edits the step
+2 motion (no new video, no re-retargeting):
+
+**Hook geometry used:** a "C" that opens up, in the forearm x-z plane. The tip is ≈ 2.3 cm above the seat and
+3 cm in front of it. The handle bar lies along the forearm's y axis. To go under the bar, the throat must be
+≥ 3.5 cm below it; the plan uses 5 cm.
+
+**Edit (IK with mink on a throat site; only the waist and right arm move; base, legs and left arm keep the
+reference):**
+
+| Phase | Frames (50 Hz) | Hook throat |
+|---|---|---|
+| pickup approach | 204 → 238 | from the reference to 10 cm **behind** the bar, 5 cm **below** it |
+| slide under | 238 → 258 | forward along the forearm until under the bar |
+| seat / lift | 258 → 272 | up until the bar rests in the seat (2.1 cm above the throat) |
+| rejoin | 272 → 310 | decaying offset back onto the reference lift |
+| lower | 615 → 672 | down until the bag stands on the floor |
+| drop out of the seat | 672 → 692 | 3 cm further down (5 cm under the bar) |
+| pull back | 692 → 715 | 9 cm back along the forearm, so the tip clears the bar |
+| rise behind | 715 → 735 | 10 cm above the bar, still behind it |
+| rejoin | 735 → 770 | back onto the reference |
+
+Supporting changes:
+- **Time warp:** in the reference the person stands straight up after the set-down (hips +28 cm in 0.5 s), so the
+  hook couldn't stay down to unhook. Frames 655–675 (the bottom of the squat) play 4× slower: +60 frames, so the
+  clip is now 910 frames (18.2 s); episodes are still 20 s.
+- **Set-down spot:** 33 cm in front of the right shoulder (horizontally), so the arm can reach 5 cm under the bar
+  and the bag clears the thighs.
+- **Pickup spot:** under the reference throat at its lowest point. The bar axis is the forearm's y axis (v1–v5
+  used a +30° yaw from the 1485-placement search).
+- **IK details:** continuity regularization (each frame stays near the previous one: no arm-branch flips). At the
+  end of each edit, a 30-frame joint crossfade back to the reference.
+
+**Checks (`results/IMG_0531_hook/hook_edit_report.json`):**
+- Throat on every waypoint within 0.2 mm; worst frame 2.9 cm, inside the end crossfade (bag hanging or
+  already released).
+- Max joint speed 6.05 rad/s, the same as the original clip. Inside the 0.9 soft limits.
+- Robot–bag clearance: pickup ≥ **7 mm** (hook vs bar while sliding under); set-down ≥ **2.2 cm**.
+- Converted to `bag_pickup_IMG_0531_hook.npz` with `to_robolab.py`: FK error 1 mm.
+- Video: `motion/step2_gmr/results/IMG_0531_hook/hook_edit_reference.mp4` (two close-up views, kinematic bag).
+
+`bag_placement.json` v2 (v1 kept as `bag_placement_v1.json`): pickup_min 258, lift 272, place_min 672
+(touch), release 715 (hook out), total 911 (training clip 910).
+
+**Task v6 (`RPO-BagCarry`):**
+- Uses the edited motion.
+- The bag stands at the set-down spot from `place_min` (touch) on.
+- `hook_to_handle` (seated) applies from lift to touch.
+- The v5 under-bar terms are replaced by `hook_to_ref`: hook throat to the **reference** throat, absolute
+  (std 4 cm, weight 2, plus a coarse std 20 cm, weight 1), in the engage window (lift − 70 … lift + 10) and the
+  release window (touch − 10 … release + 20). The bag sits exactly where the edited reference engages it, so
+  following the reference hook path there threads and releases the handle.
+- Knocked-over penalty back to −1.
+- Training restarts from the **step 3 policy** (padded), not v5, which had learned to keep away from the bag.

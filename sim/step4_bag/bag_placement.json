@@ -1,34 +1,34 @@
 {
-  "note": "motion frame (add env origin); yaw about +z of the bag x axis (= handle bar); quaternions are built in the task",
+  "note": "v2 (hook-edited reference, motion/step2_gmr/hook_edit.py): motion frame (add env origin); yaw about +z of the bag x axis (= handle bar = forearm y at pickup/set-down)",
   "fps": 50,
   "frames": {
-    "pickup_min": 254,
+    "pickup_min": 258,
     "lift": 272,
-    "place_min": 665,
-    "release": 676,
-    "total": 851
+    "place_min": 672,
+    "release": 715,
+    "total": 911
   },
   "times_s": {
-    "pickup_min": 5.08,
+    "pickup_min": 5.16,
     "lift": 5.44,
-    "place_min": 13.3,
-    "release": 13.52
+    "place_min": 13.44,
+    "release": 14.3
   },
   "start": {
     "pos": [
-      -0.9295329789260655,
-      -0.05198372721697007,
+      -0.9196004112944098,
+      -0.05314308058958232,
       0.0
     ],
-    "yaw": -1.6869929621356339
+    "yaw": -1.2591277669180863
   },
   "drop": {
     "pos": [
-      -2.260865652147332,
-      0.8597861756895124,
+      -2.230334967270233,
+      0.7584137397961843,
       0.0
     ],
-    "yaw": -2.2105917377339326
+    "yaw": -1.9442070384429446
   },
   "geometry": {
     "box": [
@@ -54,7 +54,28 @@
     ]
   },
   "reference_throat_z": {
-    "pickup": 0.3267588243253305,
-    "place": 0.42918185629653804
+    "pickup": 0.34099999999999997,
+    "place": 0.34099999999999997
+  },
+  "hook_edit": {
+    "PICK": {
+      "start": 204,
+      "behind": 238,
+      "under": 258,
+      "lift": 272,
+      "rejoin": 310
+    },
+    "REL": {
+      "start": 615,
+      "touch": 672,
+      "drop": 692,
+      "out": 715,
+      "up": 735,
+      "rejoin": 770
+    },
+    "UNDER": -0.05,
+    "SEAT": -0.021,
+    "BACK_PICK": 0.1,
+    "BACK_REL": 0.09
   }
 }

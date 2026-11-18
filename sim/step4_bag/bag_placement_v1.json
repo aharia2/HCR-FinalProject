@@ -1,0 +1,60 @@
+{
+  "note": "motion frame (add env origin); yaw about +z of the bag x axis (= handle bar); quaternions are built in the task",
+  "fps": 50,
+  "frames": {
+    "pickup_min": 254,
+    "lift": 272,
+    "place_min": 665,
+    "release": 676,
+    "total": 851
+  },
+  "times_s": {
+    "pickup_min": 5.08,
+    "lift": 5.44,
+    "place_min": 13.3,
+    "release": 13.52
+  },
+  "start": {
+    "pos": [
+      -0.9295329789260655,
+      -0.05198372721697007,
+      0.0
+    ],
+    "yaw": -1.6869929621356339
+  },
+  "drop": {
+    "pos": [
+      -2.260865652147332,
+      0.8597861756895124,
+      0.0
+    ],
+    "yaw": -2.2105917377339326
+  },
+  "geometry": {
+    "box": [
+      0.3,
+      0.12,
+      0.24
+    ],
+    "post_x": 0.06,
+    "bar_r": 0.006,
+    "bar_z": 0.362
+  },
+  "hook": {
+    "throat_in_hook_link": [
+      0.06,
+      0.0,
+      -0.02
+    ],
+    "hook_mount_x_in_forearm": 0.13275,
+    "throat_in_forearm": [
+      0.19275,
+      0.0,
+      -0.02
+    ]
+  },
+  "reference_throat_z": {
+    "pickup": 0.3267588243253305,
+    "place": 0.42918185629653804
+  }
+}

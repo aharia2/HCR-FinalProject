@@ -5,9 +5,11 @@ until the lift, set-down spot after) in the robot torso frame. The bag and the r
 hardware this needs only odometry + the known placement (no bag sensing). The step 3 checkpoint is padded with zero
 input weights for the new term (`pad_checkpoint.py`), so training still starts from the step 3 policy.
 
-Bag phases follow the reference time step (50 Hz, frames from bag_placement.json):
-  t <  lift     bag stands at the pickup spot          t in [lift, release)  bag hangs from the reference hook
-  t >= release  bag stands at the set-down spot
+v6: the reference is the HOOK-EDITED motion (motion/step2_gmr/hook_edit.py, 910 frames): the hook goes behind and
+under the handle, lifts, and at the set-down lowers the bag onto the floor, drops below the bar and pulls back out.
+Bag phases follow the reference time step (50 Hz, frames from bag_placement.json v2):
+  t <  lift       bag stands at the pickup spot        t in [lift, place_min)  bag hangs from the robot's hook
+  t >= place_min  bag stands at the set-down spot (the hook unhooks from it until `release`)
 Each episode reset (BeyondMimic starts episodes at sampled points of the clip) puts the bag in the matching state.
 """
 import json
@@ -28,12 +30,14 @@ from isaaclab.utils.noise import UniformNoiseCfg as Unoise
 import isaaclab.sim as sim_utils
 
 from bagmimic import RPOBagMimicEnvCfg, RPOBagMimicPPORunnerCfg
+from robolab import ROBOLAB_ROOT_DIR
 from robolab.tasks.manager_based.beyondmimic import mdp
 from robolab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand, MotionCommandCfg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLACE = json.load(open(os.path.join(HERE, "..", "bag_placement.json")))
 BAG_URDF = os.path.join(HERE, "..", "assets", "bag.urdf")
+HOOK_MOTION = os.path.join(ROBOLAB_ROOT_DIR, "data", "motions", "rpo_bm", "bag_pickup_IMG_0531_hook.npz")
 F = PLACE["frames"]
 BAR_Z = PLACE["geometry"]["bar_z"]
 THROAT_IN_FOREARM = PLACE["hook"]["throat_in_forearm"]
@@ -120,7 +124,7 @@ class BagMotionCommand(MotionCommand):
         org = self._env.scene.env_origins[env_ids]
         n = len(env_ids)
         pos = torch.zeros(n, 3, device=self.device); yaw = torch.zeros(n, device=self.device)
-        before, after = t < F["lift"], t >= F["release"]
+        before, after = t < F["lift"], t >= F["place_min"]      # v6: bag stands on the floor from the set-down touch
         hang = ~before & ~after
         pos[before] = self.start_pos + org[before]; yaw[before] = self.start_yaw
         pos[after] = self.drop_pos + org[after]; yaw[after] = self.drop_yaw
@@ -174,6 +178,16 @@ def hook_to_handle(env, std: float, start: int = F["lift"] - 60, end: int = F["r
     return torch.exp(-d2 / std ** 2) * _window(c, start, end)
 
 
+def hook_to_ref(env, std: float, windows: tuple):
+    """v6: hook throat to the REFERENCE hook throat (absolute, motion frame). The bag is placed where the hook-edited
+    reference engages/disengages it, so following the reference hook path there is what threads / releases the
+    handle, even when the body is off the reference."""
+    c = _cmd(env)
+    d2 = ((c.robot_throat_w - c.ref_throat_w) ** 2).sum(-1)
+    w = sum(_window(c, a, b) for a, b in windows)
+    return torch.exp(-d2 / std ** 2) * w
+
+
 def bag_lifted(env, height: float):
     """Only an UPRIGHT bag counts (v4): a bag knocked onto its side has its origin ≈ 6 cm up, which v1–v3 rewarded."""
     c = _cmd(env)
@@ -221,17 +235,19 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
         self.events.bag_mass = EventTerm(
             func=mdp.randomize_rigid_body_mass, mode="startup",
             params={"asset_cfg": SceneEntityCfg("bag"), "mass_distribution_params": MASS_RANGE, "operation": "abs"})
+        # v6: hook-edited reference motion (motion/step2_gmr/hook_edit.py): the hook goes behind/under the handle,
+        # lifts, and at the set-down lowers, drops below the bar and pulls back out.
+        self.commands.motion.motion_file = HOOK_MOTION
         # seated on the bar while carrying
         self.rewards.hook_to_handle = RewTerm(func=hook_to_handle, weight=1.0, params={
-            "std": 0.05, "start": F["lift"], "end": F["release"]})
-        # approach: under the bar (4 cm below), fine + coarse (the 5 cm kernel gives no gradient from 25+ cm away)
-        self.rewards.hook_under_handle = RewTerm(func=hook_to_handle, weight=2.0, params={
-            "std": 0.05, "start": F["lift"] - 60, "end": F["lift"] + 5, "dz": -0.04})
-        self.rewards.hook_to_handle_coarse = RewTerm(func=hook_to_handle, weight=1.0, params={
-            "std": 0.25, "start": F["lift"] - 100, "end": F["lift"] + 5, "dz": -0.04})
+            "std": 0.05, "start": F["lift"], "end": F["place_min"]})
+        # follow the reference hook path through the engage and release manoeuvres (fine + coarse)
+        hook_windows = ((F["lift"] - 70, F["lift"] + 10), (F["place_min"] - 10, F["release"] + 20))
+        self.rewards.hook_to_ref = RewTerm(func=hook_to_ref, weight=2.0, params={"std": 0.04, "windows": hook_windows})
+        self.rewards.hook_to_ref_coarse = RewTerm(func=hook_to_ref, weight=1.0, params={"std": 0.20, "windows": hook_windows})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
-        self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-3.0)
+        self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
         self.terminations.bag_dropped = DoneTerm(func=bag_dropped)
         # v3: policy + critic see the fixed task target (appended LAST so step-3 weights can be padded with zeros)
         self.observations.policy.target_handle_b = ObsTerm(func=target_handle_b, noise=Unoise(n_min=-0.01, n_max=0.01))
