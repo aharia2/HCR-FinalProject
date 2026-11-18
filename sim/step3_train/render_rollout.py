@@ -52,8 +52,9 @@ def main():
     vw = cv2.VideoWriter(a.out, cv2.VideoWriter_fourcc(*"mp4v"), 50, (2 * W, H))
     walk = Qref[-1, :2] - Qref[0, :2]
     az = float(np.degrees(np.arctan2(walk[1], walk[0]))) + 90
+    k0 = int(round(float(R["t"][0]) / 0.02))                  # clip frame of the first sample (carry-only evals start at the lift)
     for k in range(T):
-        kr = min(k, len(Qref) - 1)
+        kr = min(k + k0, len(Qref) - 1)
         d_ref.qpos[:Qref.shape[1]] = Qref[kr]
         d_pol.qpos[:3] = R["root_pos"][k]
         d_pol.qpos[3:7] = R["root_quat_wxyz"][k]
@@ -69,7 +70,7 @@ def main():
             cam.lookat[:] = [d_ref.qpos[0], d_ref.qpos[1], 0.55]       # same camera for both panels
             rr.update_scene(d, cam)
             img = cv2.cvtColor(rr.render(), cv2.COLOR_RGB2BGR)
-            cv2.putText(img, f"{label}  t={k * 0.02:5.2f}s", (10, 25), 0, 0.7, (0, 0, 0), 2)
+            cv2.putText(img, f"{label}  t={(k + k0) * 0.02:5.2f}s", (10, 25), 0, 0.7, (0, 0, 0), 2)
             if label == "policy" and has_bag:
                 cv2.putText(img, f"bag height {R['bag_height'][k] * 100:4.1f} cm", (10, 50), 0, 0.6, (0, 0, 0), 2)
             elif label == "policy" and "hook_err" in R.files:

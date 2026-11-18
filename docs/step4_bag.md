@@ -153,3 +153,37 @@ Two conclusions:
 Hooking a handle from the floor with this reward design does not emerge. Carrying a bag that is already on the
 hook does work in training (hook_to_handle and bag_lifted rewards are high), so that part was measured on its
 own: `eval_bagcarry.py --start=lift` starts at the lift frame with the bag already on the robot's hook.
+
+## Carry-only results (v5 @ 17800, `--start=lift`, bag on the robot's hook at 5.44 s, 64 envs per row)
+
+| Mode | Mass | No fall | Lifted ≥ 10 cm (upright) | Hooked at mid-carry (≤ 3 cm) | Max bag height (median) | Set down in the 0.4 m square |
+|---|---|---|---|---|---|---|
+| clean | 0.5 kg | 64/64 | **64/64** | 52/64 | 21.5 cm | 0/64 |
+| clean | 1.0 kg | 64/64 | **64/64** | 54/64 | 21.4 cm | 0/64 |
+| clean | 1.25 kg (held out) | 64/64 | **64/64** | 49/64 | 21.4 cm | 0/64 |
+| clean | 1.5 kg | 64/64 | **64/64** | 43/64 | 21.4 cm | 0/64 |
+| clean | 2.0 kg | 64/64 | **64/64** | 44/64 | 20.3 cm | 0/64 |
+| randomized | 0.5 kg | 64/64 | **64/64** | 47/64 | 23.4 cm | 1/64 |
+| randomized | 1.25 kg | 63/64 | **64/64** | 49/64 | 23.3 cm | 2/64 |
+| randomized | 2.0 kg | 62/64 | **64/64** | 39/64 | 22.0 cm | 0/64 |
+
+- **Carrying works across 0.5–2 kg, with domain randomization:** every bag is carried, ≥ 97% of runs don't fall,
+  and the bag stays on the hook. ("Hooked" < 64 means the handle slid along the hook by more than 3 cm, not
+  that it fell off.) The policy carries with the arm lowered at its side instead of raised as in the reference.
+- **Set-down fails:** the robot lowers the bag to ≈ 4 cm above the floor about 23 cm from the spot, but the
+  upward-opening hook never comes out of the handle. It then walks back still carrying the bag (the
+  reference walks back after the set-down).
+- Videos: `results/carry_v5_17800/carry_clean_{1kg,2kg}.mp4`.
+
+## Step 4 status
+
+| Part of the task | Status |
+|---|---|
+| Walk the clip without falling, with domain randomization | ✅ (step 3 policy; step 4 keeps it: 64/64 from frame 0) |
+| Carry a 0.5–2 kg bag, including the held-out 1.25 kg | ✅ (64/64 lifted, ≤ 2/64 falls) |
+| Pick the bag up from the floor | ❌ 0/64 (v1–v5) |
+| Release the bag at the set-down spot | ❌ the hook does not let go |
+
+Both failures are about **getting the hook into and out of the handle**. The reference motion comes from a
+human hand (grasp → lift, set down → open the hand), and a hook can't copy the "close/open hand" part. The
+reference hook comes straight down onto the handle and never moves out of it.
