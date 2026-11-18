@@ -268,3 +268,11 @@ checkpoint for 4000 more iterations, with extra engage-window weight (`hook_to_r
 
 v7 started automatically at 09:20 UTC (resumed from 19998, 4000 iterations). `eval_bagcarry.py` now records all
 envs and saves the first *successful* env's trajectory for rendering (key `saved_env`).
+| v7 @ 21600 | 1/64 hooked, 4/64 lifted / **2/64 full success** | **45/64**, 64/64 no fall, set-down 14 cm from the spot (median) | hook vs reference at slide-under: 5.2 cm mean, 5 cm std |
+
+`measure_hook.py` (v7 @ 21600, clean, bag removed): hook minus reference hook. At slide-under (frame 258),
+(5.2, 1.8, −0.1) cm mean, p90 spread 7 cm. At the lift, 3.7 cm mean, spread 8.4 cm. At the release, ≈ 0, spread
+4 cm. The pickup capture region of the handle is a few cm: the hook must pass between the posts at ±6 cm (hook
+half-width 2 cm + post radius 6 mm leaves ±3.4 cm) and stay ≥ 1.5 cm under the bar.
+
+Video of the first full success: `results/v7_21600/full_task_success_1kg.mp4`.
