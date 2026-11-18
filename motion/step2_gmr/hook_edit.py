@@ -30,12 +30,16 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SRC = REPO / "motion/step2_gmr/results/IMG_0531"
-DST = REPO / "motion/step2_gmr/results/IMG_0531_hook"
-PLACEMENT = REPO / "sim/step4_bag/bag_placement.json"
+sys.path.insert(0, str(REPO / "sim/step4_bag"))
+import bag_profiles  # noqa: E402
+BAG = bag_profiles.get()                       # HCR_BAG=sim12 (default) | wf
+DST = REPO / f"motion/step2_gmr/results/IMG_0531_hook{BAG['suffix']}"
+PLACEMENT = REPO / f"sim/step4_bag/bag_placement{BAG['suffix']}.json"
+BASE_PLACEMENT = REPO / "sim/step4_bag/bag_placement.json"     # hook / fps fields; geometry replaced per profile
 
 THROAT = np.array([0.19275, 0.0, -0.020])     # handle seat in right_elbow_yaw_link
-BOX = (0.30, 0.12, 0.24)
-POST_X, BAR_R, BAR_Z = 0.06, 0.006, 0.362
+BOX = tuple(BAG["box"])
+POST_X, BAR_R, BAR_Z = BAG["post_x"], BAG["bar_r"], BAG["bar_z"]
 SEAT = -0.021                                  # throat z relative to the bar when the bar rests in the seat
 UNDER = -0.05                                  # throat 5 cm under the bar: hook tip (+2.3 cm) clears the bar (r 6 mm)
 BACK_PICK, BACK_REL = 0.10, 0.09               # how far behind the bar the hook starts / ends (along the forearm)
@@ -50,7 +54,10 @@ WARP_ADD = (WARP_B - WARP_A) * (WARP_X - 1)    # +60 frames -> 911 frames, 18.2 
 # phase frames (50 Hz, warped timeline); reference throat minimum at pickup 254 (before the warp, unchanged)
 PICK = dict(start=204, behind=238, under=258, lift=272, rejoin=310)
 REL = dict(start=615, touch=672, drop=692, out=715, up=735, rejoin=770)
-DROP_REACH = 0.33                              # set-down handle: this far in front of the shoulder (horizontal)
+DROP_REACH = BAG.get("drop_reach", 0.33)       # set-down handle: this far in front of the shoulder (horizontal)
+CARRY_OUT = BAG.get("carry_out", 0.0)          # carry: hook this far further OUT to the robot's right (bag clears thigh)
+CARRY_RAMP = 30
+PICK_PUSH = BAG.get("pick_push", 0.0)          # pickup handle moved this far further out along the forearm (thigh room)
 
 FREE = ["torso_joint", "right_arm_pitch_joint", "right_arm_roll_joint", "right_arm_yaw_joint",
         "right_elbow_pitch_joint", "right_elbow_yaw_joint"]
@@ -121,6 +128,7 @@ def main():
         bar = np.array([P[k, 0], P[k, 1], BAR_Z]); u = horiz(R[k][:, 0]); ax = horiz(R[k][:, 1])
         return bar, u, ax
     bar_p, u_p, ax_p = anchor(254)
+    bar_p = bar_p + PICK_PUSH * u_p
     _, u_d, ax_d = anchor(REL["touch"])
     d.qpos[:] = Q[REL["touch"]]; mujoco.mj_kinematics(m, d)
     sh = d.xpos[m.body("right_arm_pitch_link").id].copy()
@@ -150,6 +158,15 @@ def main():
     fill(PICK["start"], wp_pick, PICK["rejoin"])
     fill(REL["start"], wp_rel, REL["rejoin"])
     edit = np.zeros(T, bool); edit[PICK["start"]:PICK["rejoin"] + 1] = True; edit[REL["start"]:REL["rejoin"] + 1] = True
+    if CARRY_OUT != 0:   # taller bag profiles: from the lift to the set-down, shift the hook sideways (+: base +y side)
+        a, b = PICK["lift"] + 1, REL["start"]                    # starts AT the lift (thigh is close while standing up)
+        base_id = m.body("base_link").id
+        for k in range(a, b):
+            d.qpos[:] = Q[k]; mujoco.mj_kinematics(m, d)
+            side = horiz(d.xmat[base_id].reshape(3, 3)[:, 1])
+            s_ = minjerk(min(k - a, b - 1 - k) / CARRY_RAMP)
+            tgt[k] = tgt[k] + s_ * CARRY_OUT * side              # on top of the pickup blend-back (tgt = P after it)
+        edit[a:b] = True
 
     # --- IK: only waist + right arm move; joint limits shrunk to the soft limits ---
     lo, hi = m.jnt_range[:, 0].copy(), m.jnt_range[:, 1].copy()
@@ -186,7 +203,7 @@ def main():
         res[k] = np.linalg.norm(fk(Qe[k])[0] - tgt[k])
     # joint-space crossfade back to the reference at the end of each edit (the IK may sit on another arm branch
     # with the same hook position, which would otherwise snap at the rejoin frame)
-    for end in (PICK["rejoin"], REL["rejoin"]):
+    for end in ((REL["rejoin"],) if CARRY_OUT != 0 else (PICK["rejoin"], REL["rejoin"])):   # no pickup rejoin with a carry edit
         for k in range(end - XFADE, end + 1):
             s_ = minjerk((k - (end - XFADE)) / XFADE); Qe[k, 7:] = (1 - s_) * Qe[k, 7:] + s_ * Q[k, 7:]
             res[k] = np.linalg.norm(fk(Qe[k])[0] - tgt[k])
@@ -238,9 +255,10 @@ def main():
     # --- write ---
     DST.mkdir(exist_ok=True)
     np.savez_compressed(DST / "robot_motion_clean.npz", **{**M, "qpos": Qe})
-    if PLACEMENT.exists() and not (PLACEMENT.parent / "bag_placement_v1.json").exists():
+    if BAG["name"] == "sim12" and PLACEMENT.exists() and not (PLACEMENT.parent / "bag_placement_v1.json").exists():
         shutil.copy(PLACEMENT, PLACEMENT.parent / "bag_placement_v1.json")
-    old = json.loads(PLACEMENT.read_text())
+    old = json.loads(BASE_PLACEMENT.read_text())
+    old["geometry"] = dict(box=list(BOX), post_x=POST_X, bar_r=BAR_R, bar_z=BAR_Z, profile=BAG["name"])
     frames = dict(pickup_min=PICK["under"], lift=PICK["lift"], place_min=REL["touch"], release=REL["out"], total=T)
     new = dict(old, note="v2 (hook-edited reference, motion/step2_gmr/hook_edit.py): motion frame (add env origin); "
                           "yaw about +z of the bag x axis (= handle bar = forearm y at pickup/set-down)",

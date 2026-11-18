@@ -1,0 +1,211 @@
+{
+  "ik_residual_m": {
+    "max": 0.023236558564332717,
+    "p95": 0.00021030633807769532,
+    "at": {
+      "238": 0.00014077354281581545,
+      "258": 0.0001067689737794371,
+      "272": 0.00011590384866807422,
+      "672": 1.4252092280142254e-05,
+      "692": 8.347482220723161e-05,
+      "715": 1.617917376407935e-05,
+      "735": 0.00019566323294658235
+    }
+  },
+  "joints_changed": [
+    "right_arm_pitch_joint",
+    "right_arm_roll_joint",
+    "right_arm_yaw_joint",
+    "right_elbow_pitch_joint",
+    "right_elbow_yaw_joint",
+    "torso_joint"
+  ],
+  "max_joint_speed_rad_s": {
+    "pickup_edit": 6.051271730434022,
+    "release_edit": 5.225695617913095,
+    "whole_edited_clip": 6.051271730434022,
+    "original_whole_clip": 6.051271730434022
+  },
+  "frames_total": 911,
+  "ik_residual_trace_release": {
+    "615": 0.0,
+    "620": 0.0,
+    "625": 0.0,
+    "630": 0.0,
+    "635": 0.0,
+    "640": 0.0,
+    "645": 0.0,
+    "650": 0.0,
+    "655": 0.0,
+    "660": 0.0,
+    "665": 0.0,
+    "670": 0.0,
+    "675": 0.0,
+    "680": 0.0001,
+    "685": 0.0001,
+    "690": 0.0001,
+    "695": 0.0001,
+    "700": 0.0,
+    "705": 0.0001,
+    "710": 0.0,
+    "715": 0.0,
+    "720": 0.0001,
+    "725": 0.0002,
+    "730": 0.0002,
+    "735": 0.0002,
+    "740": 0.0002,
+    "745": 0.0042,
+    "750": 0.0172,
+    "755": 0.0231,
+    "760": 0.0142,
+    "765": 0.0028,
+    "770": 0.0
+  },
+  "within_soft_limits": true,
+  "pickup_min_clearance": {
+    "150": [
+      0.1175,
+      "bag_box",
+      "right_ankle_roll_link"
+    ],
+    "160": [
+      0.1104,
+      "bag_box",
+      "right_ankle_roll_link"
+    ],
+    "170": [
+      0.0509,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "180": [
+      0.0419,
+      "bag_box",
+      "left_ankle_roll_link"
+    ],
+    "190": [
+      0.0347,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "200": [
+      0.0453,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "210": [
+      0.031,
+      "bag_box",
+      "right_thigh_pitch_link"
+    ],
+    "220": [
+      0.0265,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "226": [
+      0.0038,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "228": [
+      0.0022,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "230": [
+      0.0025,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "232": [
+      0.0037,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "240": [
+      0.0075,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "250": [
+      0.0087,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "260": [
+      0.0088,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "270": [
+      0.0105,
+      "bag_bar",
+      "right_hook_link"
+    ]
+  },
+  "release_min_clearance": {
+    "700": [
+      0.0088,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "710": [
+      0.0108,
+      "bag_box",
+      "right_hook_link"
+    ],
+    "720": [
+      0.013,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "730": [
+      0.0185,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "740": [
+      0.0393,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "750": [
+      0.0965,
+      "bag_box",
+      "left_thigh_pitch_link"
+    ],
+    "760": [
+      0.1306,
+      "bag_box",
+      "left_ankle_roll_link"
+    ],
+    "770": [
+      0.1291,
+      "bag_box",
+      "left_ankle_roll_link"
+    ],
+    "780": [
+      0.1318,
+      "bag_box",
+      "left_ankle_roll_link"
+    ],
+    "790": [
+      0.133,
+      "bag_box",
+      "left_ankle_roll_link"
+    ]
+  },
+  "pickup_worst": [
+    0.002235032021686491,
+    228,
+    "bag_box",
+    "right_hook_link"
+  ],
+  "release_worst": [
+    0.00829782467351381,
+    698,
+    "bag_box",
+    "right_hook_link"
+  ]
+}

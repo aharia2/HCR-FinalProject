@@ -30,8 +30,8 @@ def main():
     model = load_model()
     has_bag = "bag_pos" in R.files
     if has_bag:   # add the bag (same geometry as sim/step4_bag/assets/bag.urdf) as a free body
-        import json as _json
-        G = _json.load(open(REPO / "sim/step4_bag/bag_placement.json"))["geometry"]
+        import json as _json, os as _os
+        G = _json.load(open(REPO / f"sim/step4_bag/bag_placement{'_wf' if _os.environ.get('HCR_BAG') == 'wf' else ''}.json"))["geometry"]
         xml = (REPO / "robot/mjcf/rpo_hook.xml").read_text().replace('meshdir="../meshes/"', f'meshdir="{REPO / "robot/meshes"}/"')
         spec = mujoco.MjSpec.from_string(xml)
         b = spec.worldbody.add_body(name="bag"); b.add_freejoint()

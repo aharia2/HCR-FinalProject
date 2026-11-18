@@ -1,0 +1,82 @@
+{
+  "note": "v2 (hook-edited reference, motion/step2_gmr/hook_edit.py): motion frame (add env origin); yaw about +z of the bag x axis (= handle bar = forearm y at pickup/set-down)",
+  "fps": 50,
+  "frames": {
+    "pickup_min": 258,
+    "lift": 272,
+    "place_min": 672,
+    "release": 715,
+    "total": 911
+  },
+  "times_s": {
+    "pickup_min": 5.16,
+    "lift": 5.44,
+    "place_min": 13.44,
+    "release": 14.3
+  },
+  "start": {
+    "pos": [
+      -0.9684635264231075,
+      -0.0637447776197579,
+      0.0
+    ],
+    "yaw": -1.2591277669180863
+  },
+  "drop": {
+    "pos": [
+      -2.2680456518951964,
+      0.7717518155613222,
+      0.0
+    ],
+    "yaw": -1.9442070384429446
+  },
+  "geometry": {
+    "box": [
+      0.3,
+      0.17,
+      0.35
+    ],
+    "post_x": 0.045,
+    "bar_r": 0.004,
+    "bar_z": 0.43599999999999994,
+    "profile": "wf"
+  },
+  "hook": {
+    "throat_in_hook_link": [
+      0.06,
+      0.0,
+      -0.02
+    ],
+    "hook_mount_x_in_forearm": 0.13275,
+    "throat_in_forearm": [
+      0.19275,
+      0.0,
+      -0.02
+    ]
+  },
+  "reference_throat_z": {
+    "pickup": 0.4149999999999999,
+    "place": 0.4149999999999999
+  },
+  "hook_edit": {
+    "PICK": {
+      "start": 204,
+      "behind": 238,
+      "under": 258,
+      "lift": 272,
+      "rejoin": 310
+    },
+    "REL": {
+      "start": 615,
+      "touch": 672,
+      "drop": 692,
+      "out": 715,
+      "up": 735,
+      "rejoin": 770
+    },
+    "UNDER": -0.05,
+    "SEAT": -0.021,
+    "BACK_PICK": 0.1,
+    "BACK_REL": 0.09
+  }
+}

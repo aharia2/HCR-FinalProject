@@ -35,9 +35,13 @@ from robolab.tasks.manager_based.beyondmimic import mdp
 from robolab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand, MotionCommandCfg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PLACE = json.load(open(os.path.join(HERE, "..", "bag_placement.json")))
-BAG_URDF = os.path.join(HERE, "..", "assets", "bag.urdf")
-HOOK_MOTION = os.path.join(ROBOLAB_ROOT_DIR, "data", "motions", "rpo_bm", "bag_pickup_IMG_0531_hook.npz")
+import sys as _sys  # noqa: E402
+_sys.path.insert(0, os.path.join(HERE, ".."))
+import bag_profiles  # noqa: E402
+BAG = bag_profiles.get()     # env HCR_BAG: sim12 (default, v1–v8) | wf (user's paper bag, 9 cm handle)
+PLACE = json.load(open(os.path.join(HERE, "..", f"bag_placement{BAG['suffix']}.json")))
+BAG_URDF = os.path.join(HERE, "..", "assets", f"bag{BAG['suffix']}.urdf")
+HOOK_MOTION = os.path.join(ROBOLAB_ROOT_DIR, "data", "motions", "rpo_bm", f"bag_pickup_IMG_0531_hook{BAG['suffix']}.npz")
 F = PLACE["frames"]
 BAR_Z = PLACE["geometry"]["bar_z"]
 THROAT_IN_FOREARM = PLACE["hook"]["throat_in_forearm"]

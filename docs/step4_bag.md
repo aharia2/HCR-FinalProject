@@ -349,3 +349,30 @@ Changes (`bagcarry/__init__.py`, resumed from v7b `model_23400.pt`, 2500 iterati
 - **Finer engage reward** `hook_to_ref_engage_fine`: std 2 cm, weight 4, frames lift−30 … lift+5.
 - `vm_eval_final.sh` runs the same test matrix afterwards and shuts the VM down. The v7b results on the VM were
   moved to `~/eval_final_v7b/`.
+
+## Paper-bag profile (prepared 2026-11-18; training starts when the user says)
+
+The user asked for the next training to use the Whole Foods paper bag they measured: 35 cm tall × 30 cm wide,
+handle 9 cm wide × 9 cm high. Bag geometry is now a named profile (`sim/step4_bag/bag_profiles.py`, selected with
+`HCR_BAG`). `sim12` = the old bag (default, v1–v8). `wf` = the paper bag:
+- Box 30 × **17** × 35 cm. The depth was not measured; 17 cm is assumed (standard grocery bag).
+- Handle posts at ±4.5 cm, radius 4 mm. Bar centre 43.6 cm above the floor (old: 36.2 cm). Modelled rigid.
+- Files: `assets/bag_wf.urdf`, `bag_placement_wf.json`, `motion/step2_gmr/results/IMG_0531_hook_wf/`
+  (`bag_pickup_IMG_0531_hook_wf.npz` for robolab; FK check 1 mm).
+
+Hook-edited reference for `wf` (`HCR_BAG=wf hook_edit.py`), with three profile settings:
+- `pick_push` 5 cm: the pickup handle is 5 cm further out along the forearm. Without it, the taller and deeper box
+  overlapped the right thigh by up to 2.6 cm during the squat.
+- `drop_reach` 0.37 m (old 0.33): same reason at the set-down.
+- `carry_out` 3.5 cm: from the lift to the set-down, the hook is shifted sideways (base +y). The 35 cm bag hangs
+  low between the legs. Without the shift it overlapped the right thigh by up to 1.9 cm in 17 of 76 sampled carry
+  frames. With 5 cm it hits the left thigh (1.5 cm), so 3.5 cm is the compromise. What's left: ≤ 7 mm while the
+  bag is still on the floor (frames 312–327) and ≤ 3 mm mid-carry. The pickup crossfade back to the reference is
+  dropped when the carry shift is on; it caused an 8 rad/s jump.
+- Checks: waypoint error < 0.2 mm; max joint speed 6.05 rad/s, the same as the original clip; inside soft limits.
+  Hook-to-bag clearance: pickup ≥ 2.2 mm (old 7 mm), release ≥ 8 mm.
+- The `sim12` output is unchanged (byte-identical motion).
+
+Expected difficulty: the 9 cm handle leaves the hook ±1.9 cm sideways (old ±3.4 cm), so expect a lower pickup
+rate than `sim12`. Launch: upload the files listed in `vm_start_wf.sh`, then
+`RESUME=<v8 checkpoint> ITERS=3000 bash ~/vm_start_wf.sh`.
