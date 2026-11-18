@@ -259,3 +259,8 @@ Supporting changes:
 - Release works: from the lift, the policy sets the bag down upright in the square and unhooks in 12/64 runs.
 - Pickup: the hook does the behind → under → up manoeuvre at the right height but stops short. The body is
   ≈ 20 cm behind the reference, and the arm makes up most of that.
+| 18600 | 0 / 0 (first lift ≥ 10 cm: 1/64) | **21/64**, 64/64 no fall | – |
+
+**v7** (automatic continuation, `vm_chain_v6_to_v7.sh`): when v6 ends at iteration 19999, resume from its last
+checkpoint for 4000 more iterations, with extra engage-window weight (`hook_to_ref_engage` std 4 cm, weight 4;
+`hook_to_ref_engage_coarse` std 12 cm, weight 2). Everything else as v6.

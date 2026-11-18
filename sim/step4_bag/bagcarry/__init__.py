@@ -245,6 +245,12 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
         hook_windows = ((F["lift"] - 70, F["lift"] + 10), (F["place_min"] - 10, F["release"] + 20))
         self.rewards.hook_to_ref = RewTerm(func=hook_to_ref, weight=2.0, params={"std": 0.04, "windows": hook_windows})
         self.rewards.hook_to_ref_coarse = RewTerm(func=hook_to_ref, weight=1.0, params={"std": 0.20, "windows": hook_windows})
+        # v7: pickup is the bottleneck (v6 @ 18600: hook stops ~8 cm short; release works from the lift in 21/64).
+        # Extra weight on following the reference hook in the engage window only.
+        self.rewards.hook_to_ref_engage = RewTerm(func=hook_to_ref, weight=4.0, params={
+            "std": 0.04, "windows": ((F["lift"] - 70, F["lift"] + 10),)})
+        self.rewards.hook_to_ref_engage_coarse = RewTerm(func=hook_to_ref, weight=2.0, params={
+            "std": 0.12, "windows": ((F["lift"] - 70, F["lift"] + 10),)})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
