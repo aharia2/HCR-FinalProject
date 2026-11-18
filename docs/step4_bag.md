@@ -248,3 +248,14 @@ Supporting changes:
 - v6 started 06:38 UTC from `step3_final_padded.pt` (5000 iterations). The env config confirms
   `bag_pickup_IMG_0531_hook.npz`. Fixed in `swap_step4_run.sh`: with no previous run the saved PID was 0, and
   `kill 0` killed the script's own process group (and the SSH session).
+
+### v6 progress (frame-0 and carry-only tests, 1 kg, clean, 64 envs)
+
+| Checkpoint | From frame 0: hooked / success | From the lift: success (carry + set down + unhook) | Hook at the lift vs the bar (along the forearm) |
+|---|---|---|---|
+| 15800 | 0 / 0 | – | 37 cm short |
+| 17200 | 0 / 0 | **12/64** (v5: 0/64), 64/64 no fall | **8.5 cm short**, correct height, 1.5 cm sideways |
+
+- Release works: from the lift, the policy sets the bag down upright in the square and unhooks in 12/64 runs.
+- Pickup: the hook does the behind → under → up manoeuvre at the right height but stops short. The body is
+  ≈ 20 cm behind the reference, and the arm makes up most of that.
