@@ -96,3 +96,22 @@ v3 implementation:
 - The new term is appended last. `pad_checkpoint.py` adds zero input weights (actor 121 → 124, critic
   340 → 343, plus Adam buffers), so v3 starts exactly from the step 3 policy.
 - All v2 fixes kept. Started at ≈ 02:05 UTC with 5000 iterations (`swap_step4_run.sh v3`).
+
+## Run v3 → v4: knocked-over bags were being rewarded (03:10 UTC)
+
+v3 frame-0 tests at 1 kg:
+
+| Checkpoint | No fall | Hooked | Closest hook–handle | Bag "max height" (median) |
+|---|---|---|---|---|
+| v3 @ 15400 | 61/64 | 0/64 | 20 cm | 6.9 cm |
+| v3 @ 16200 | **64/64** | 0/64 | – | 6.6 cm |
+
+Video at 15400 (`results/v3_15600/`): the robot squats about 20 cm short of the bag. The "lifted" ≈ 6 cm was the
+bag **knocked onto its side** (its origin is then ≈ 6 cm up). That earned `bag_lifted` reward (6/15) and set the
+`was_lifted` flag. A reward loophole.
+
+v4 changes (resumed from v3 @ 16200, which has the same observations; 3000 more iterations):
+- `bag_lifted` counts only while the bag is upright (`up_z > 0.8`); so does `was_lifted` for the drop
+  termination.
+- `bag_knocked_over` (tipped, `up_z < 0.7`) is penalised during the whole clip, weight −1 → **−3**.
+- `eval_bagcarry.py`: max bag height counts only an upright bag.

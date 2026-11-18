@@ -171,8 +171,10 @@ def hook_to_handle(env, std: float, start: int = F["lift"] - 60, end: int = F["r
 
 
 def bag_lifted(env, height: float):
+    """Only an UPRIGHT bag counts (v4): a bag knocked onto its side has its origin ≈ 6 cm up, which v1–v3 rewarded."""
     c = _cmd(env)
-    return (c.bag_height / height).clamp(0, 1) * _window(c, F["lift"] + 20, F["place_min"] - 20)
+    up = (c.bag_up_z > 0.8).float()
+    return (c.bag_height / height).clamp(0, 1) * up * _window(c, F["lift"] + 20, F["place_min"] - 20)
 
 
 def bag_placed(env, std: float):
@@ -183,15 +185,16 @@ def bag_placed(env, std: float):
 
 
 def bag_knocked_over(env):
+    """Bag tipped over (v4: penalised during the whole clip, not only before the lift)."""
     c = _cmd(env)
-    return (c.bag_up_z < 0.7).float() * _window(c, 0, F["lift"])
+    return (c.bag_up_z < 0.7).float()
 
 
 def bag_dropped(env):
     """Bag back on the floor mid-carry AFTER having been carried this episode. Episodes that never hooked the
     bag keep running (tracking rewards, no lift reward) instead of all ending at lift + 1 s."""
     c = _cmd(env)
-    c.was_lifted |= c.bag_height > 0.05
+    c.was_lifted |= (c.bag_height > 0.05) & (c.bag_up_z > 0.8)
     return c.was_lifted & (c.bag_height < 0.03) & (_window(c, F["lift"] + 50, F["place_min"] - 25) > 0)
 
 
@@ -220,7 +223,7 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
             "std": 0.25, "start": F["lift"] - 100, "end": F["lift"] + 20})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
-        self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
+        self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-3.0)
         self.terminations.bag_dropped = DoneTerm(func=bag_dropped)
         # v3: policy + critic see the fixed task target (appended LAST so step-3 weights can be padded with zeros)
         self.observations.policy.target_handle_b = ObsTerm(func=target_handle_b, noise=Unoise(n_min=-0.01, n_max=0.01))

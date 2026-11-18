@@ -90,7 +90,8 @@ def main(argv):
             alive &= ~dones.bool()
             h = c.bag_height
             if F["lift"] + 20 <= k < F["place_min"] - 20:
-                max_h = torch.where(alive, torch.maximum(max_h, h), max_h)
+                h_up = torch.where(c.bag_up_z > 0.8, h, torch.zeros_like(h))     # tipped bags do not count
+                max_h = torch.where(alive, torch.maximum(max_h, h_up), max_h)
             if k == mid:
                 hooked_mid = alive & ((c.robot_throat_w - c.bar_w).norm(dim=-1) < 0.03)
             q = robot.data.root_quat_w.torch[0].cpu().numpy(); bq = c.bag_quat_w[0].cpu().numpy()
