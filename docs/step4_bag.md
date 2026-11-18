@@ -376,3 +376,20 @@ Hook-edited reference for `wf` (`HCR_BAG=wf hook_edit.py`), with three profile s
 Expected difficulty: the 9 cm handle leaves the hook ±1.9 cm sideways (old ±3.4 cm), so expect a lower pickup
 rate than `sim12`. Launch: upload the files listed in `vm_start_wf.sh`, then
 `RESUME=<v8 checkpoint> ITERS=3000 bash ~/vm_start_wf.sh`.
+
+### v8 result (`model_25899`, 20:03–21:24 UTC, no NaN crash; matrix 21:24–21:41; VM stopped 21:46)
+
+Totals over 5 masses (0.5–2 kg), 64 envs each = 320 per row; v7b @ 23400 in brackets:
+
+| Test | Success | Lifted ≥ 10 cm | No fall |
+|---|---|---|---|
+| Full task, clean | 47/320 (56) | **100** (72) | 319 |
+| Full task, randomized | **64/320** (53) | **126** (69) | 310 |
+| From the lift, clean | 199/320 (250) | – | 320 |
+| From the lift, randomized | 196/320 (210) | – | 319 |
+
+- Pickup clearly improved: 40–80% more bags lifted.
+- Carry/set-down regressed, mostly at heavier bags (from the lift, clean 2 kg: 27/64, v7b 46/64), because 35% of
+  episodes now practise only the pickup. Net full-task success: better randomized, slightly worse clean.
+- Next run: lower `PICK_FOCUS` (≈ 0.15) to rebalance. Checkpoint `~/hcr_ckpt/step4_v8_25899.pt`;
+  results `results/v8_final/`.

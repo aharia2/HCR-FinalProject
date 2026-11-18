@@ -1,0 +1,21 @@
+{
+  "start": "zero",
+  "mode": "clean",
+  "mass_kg": 1.25,
+  "checkpoint": "/home/arya/roboparty_train/logs/rsl_rl/rpo_bagcarry/2026-11-18_20-03-52/model_25899.pt",
+  "num_envs": 64,
+  "success": "5/64",
+  "no_fall": "64/64",
+  "hooked_mid_carry": "4/64",
+  "lifted_10cm": "13/64",
+  "placed_upright_in_square": "5/64",
+  "standing_at_end": "64/64",
+  "max_bag_height_m": {
+    "median": 0.035,
+    "p10": 0.029
+  },
+  "drop_dist_m_median": 0.838,
+  "fall_times_s": [],
+  "saved_env": 1,
+  "saved_env_success": true
+}

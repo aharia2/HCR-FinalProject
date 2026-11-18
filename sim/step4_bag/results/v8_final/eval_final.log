@@ -1,0 +1,24 @@
+Wed Nov 18 08:03:32 PM UTC 2026 waiting for training pid 1295
+Wed Nov 18 09:24:32 PM UTC 2026 checkpoint /home/arya/roboparty_train/logs/rsl_rl/rpo_bagcarry/2026-11-18_20-03-52/model_25899.pt
+zero clean 0.5: RESULT {"start": "zero", "mode": "clean", "mass_kg": 0.5, "c
+zero clean 1: RESULT {"start": "zero", "mode": "clean", "mass_kg": 1.0, "c
+zero clean 1.25: RESULT {"start": "zero", "mode": "clean", "mass_kg": 1.25, "
+zero clean 1.5: RESULT {"start": "zero", "mode": "clean", "mass_kg": 1.5, "c
+zero clean 2: RESULT {"start": "zero", "mode": "clean", "mass_kg": 2.0, "c
+zero randomized 0.5: RESULT {"start": "zero", "mode": "randomized", "mass_kg": 0.
+zero randomized 1: RESULT {"start": "zero", "mode": "randomized", "mass_kg": 1.
+zero randomized 1.25: RESULT {"start": "zero", "mode": "randomized", "mass_kg": 1.
+zero randomized 1.5: RESULT {"start": "zero", "mode": "randomized", "mass_kg": 1.
+zero randomized 2: RESULT {"start": "zero", "mode": "randomized", "mass_kg": 2.
+lift clean 0.5: RESULT {"start": "lift", "mode": "clean", "mass_kg": 0.5, "c
+lift clean 1: RESULT {"start": "lift", "mode": "clean", "mass_kg": 1.0, "c
+lift clean 1.25: RESULT {"start": "lift", "mode": "clean", "mass_kg": 1.25, "
+lift clean 1.5: RESULT {"start": "lift", "mode": "clean", "mass_kg": 1.5, "c
+lift clean 2: RESULT {"start": "lift", "mode": "clean", "mass_kg": 2.0, "c
+lift randomized 0.5: RESULT {"start": "lift", "mode": "randomized", "mass_kg": 0.
+lift randomized 1: RESULT {"start": "lift", "mode": "randomized", "mass_kg": 1.
+lift randomized 1.25: RESULT {"start": "lift", "mode": "randomized", "mass_kg": 1.
+lift randomized 1.5: RESULT {"start": "lift", "mode": "randomized", "mass_kg": 1.
+lift randomized 2: RESULT {"start": "lift", "mode": "randomized", "mass_kg": 2.
+ALL DONE Wed Nov 18 09:41:39 PM UTC 2026
+Shutdown scheduled for Wed 2026-11-18 21:56:39 UTC, use 'shutdown -c' to cancel.
