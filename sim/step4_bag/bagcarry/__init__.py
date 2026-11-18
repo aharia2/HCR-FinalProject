@@ -43,6 +43,22 @@ BAR_Z = PLACE["geometry"]["bar_z"]
 THROAT_IN_FOREARM = PLACE["hook"]["throat_in_forearm"]
 MASS_RANGE = (0.5, 2.0)
 ODO_DRIFT = 0.03          # per-episode odometry error on the target observation, ±3 cm in x and y
+# v8: pickup practice. Missing the handle never terminates an episode, so robolab's failure-weighted start-time
+# sampling never favours the pickup. This fraction of resets starts shortly before the engage manoeuvre instead.
+PICK_FOCUS = 0.35
+PICK_FOCUS_RANGE = (F["lift"] - 120, F["lift"] - 50)       # frames 152–222: walk-in end → just before "behind"
+
+
+# v8: v7b stopped at iteration 23476 on "rewards contain NaN". The reward manager runs after terminations but
+# before resets, so an env that blows up yields one NaN reward before sim_unstable resets it. Zero those values.
+from isaaclab.managers import RewardManager as _RewardManager  # noqa: E402
+if not getattr(_RewardManager.compute, "_hcr_nan_safe", False):
+    _orig_compute = _RewardManager.compute
+
+    def _nan_safe_compute(self, *a, **k):
+        return torch.nan_to_num(_orig_compute(self, *a, **k), nan=0.0, posinf=0.0, neginf=0.0)
+    _nan_safe_compute._hcr_nan_safe = True
+    _RewardManager.compute = _nan_safe_compute
 
 
 def yaw_quat_xyzw(yaw: torch.Tensor) -> torch.Tensor:          # Isaac Lab 3.0 quaternions are (x, y, z, w)
@@ -114,6 +130,14 @@ class BagMotionCommand(MotionCommand):
         return tgt + org
 
     # --- reset ---
+    def _adaptive_sampling(self, env_ids):
+        super()._adaptive_sampling(env_ids)          # failure-weighted start times (robolab)
+        if PICK_FOCUS > 0 and len(env_ids) > 0:
+            ids = torch.as_tensor(env_ids, device=self.device)
+            sel = ids[torch.rand(len(ids), device=self.device) < PICK_FOCUS]
+            a, b = PICK_FOCUS_RANGE
+            self.time_steps[sel] = torch.randint(a, b, (len(sel),), device=self.device)
+
     def _resample_command(self, env_ids):
         super()._resample_command(env_ids)
         if isinstance(env_ids, slice):
@@ -266,6 +290,9 @@ class RPOBagCarryEnvCfg(RPOBagMimicEnvCfg):
             "std": 0.04, "windows": ((F["lift"] - 70, F["lift"] + 10),)})
         self.rewards.hook_to_ref_engage_coarse = RewTerm(func=hook_to_ref, weight=2.0, params={
             "std": 0.12, "windows": ((F["lift"] - 70, F["lift"] + 10),)})
+        # v8: finer engage term (std 2 cm; the handle leaves ±3.4 cm sideways). v7 @ 21600: slide-under 5 cm off.
+        self.rewards.hook_to_ref_engage_fine = RewTerm(func=hook_to_ref, weight=4.0, params={
+            "std": 0.02, "windows": ((F["lift"] - 30, F["lift"] + 5),)})
         self.rewards.bag_lifted = RewTerm(func=bag_lifted, weight=2.0, params={"height": 0.15})
         self.rewards.bag_placed = RewTerm(func=bag_placed, weight=1.0, params={"std": 0.2})
         self.rewards.bag_knocked_over = RewTerm(func=bag_knocked_over, weight=-1.0)
