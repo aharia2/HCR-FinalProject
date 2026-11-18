@@ -49,7 +49,7 @@ MASS_RANGE = (0.5, 2.0)
 ODO_DRIFT = 0.03          # per-episode odometry error on the target observation, ±3 cm in x and y
 # v8: pickup practice. Missing the handle never terminates an episode, so robolab's failure-weighted start-time
 # sampling never favours the pickup. This fraction of resets starts shortly before the engage manoeuvre instead.
-PICK_FOCUS = 0.35
+PICK_FOCUS = 0.15        # v8 used 0.35: more pickups but weaker carry/set-down (see docs)
 PICK_FOCUS_RANGE = (F["lift"] - 120, F["lift"] - 50)       # frames 152–222: walk-in end → just before "behind"
 
 
