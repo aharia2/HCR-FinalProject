@@ -46,7 +46,7 @@ F = PLACE["frames"]
 BAR_Z = PLACE["geometry"]["bar_z"]
 THROAT_IN_FOREARM = PLACE["hook"]["throat_in_forearm"]
 MASS_RANGE = (0.5, 2.0)
-ODO_DRIFT = 0.03          # per-episode odometry error on the target observation, ±3 cm in x and y
+ODO_DRIFT = float(os.environ.get("HCR_ODO_DRIFT", 0.03))   # per-episode odometry error on the target observation, ±3 cm in x and y
 # v8: pickup practice. Missing the handle never terminates an episode, so robolab's failure-weighted start-time
 # sampling never favours the pickup. This fraction of resets starts shortly before the engage manoeuvre instead.
 PICK_FOCUS = 0.15        # v8 used 0.35: more pickups but weaker carry/set-down (see docs)

@@ -393,3 +393,32 @@ Totals over 5 masses (0.5–2 kg), 64 envs each = 320 per row; v7b @ 23400 in br
   episodes now practise only the pickup. Net full-task success: better randomized, slightly worse clean.
 - Next run: lower `PICK_FOCUS` (≈ 0.15) to rebalance. Checkpoint `~/hcr_ckpt/step4_v8_25899.pt`;
   results `results/v8_final/`.
+
+## Localization-error test (2026-11-19)
+
+Question: how much of the pickup failure comes from the robot not knowing exactly where it is (odometry error on
+the target observation) vs. the policy's own imprecision? `vm_drift_test.sh`: v8 `model_25899`, from frame 0,
+clean, 1 kg, 128 envs. Only the per-episode odometry error (`HCR_ODO_DRIFT`, uniform ±d in x and y) is changed;
+training used ±3 cm.
+
+| Odometry error | Success | Lifted ≥ 10 cm | No fall |
+|---|---|---|---|
+| 0 (perfect localization) | **41/128 (32%)** | 60/128 (47%) | 128/128 |
+| ±3 cm (training value) | 22/128 (17%) | 36/128 (28%) | 128/128 |
+| ±6 cm | 20/128 (16%) | 31/128 (24%) | 128/128 |
+
+- Localization error roughly halves success (32% → 17%).
+- With perfect localization the hook still misses about half the time (47% lifted), so the other half of the
+  problem is policy precision. Both need work: less drift (shorter approach, wider handle) and a more precise
+  pickup (training).
+- ±3 → ±6 cm costs little more: most of the runs that rely on accuracy already fail at ±3 cm.
+
+**GPU change.** On 2026-11-19 Google set the project's L4 quota to 0 in every region. A request was refused for
+"not enough usage history". "GPUs (all regions)" is still 1, and per-region V100 quota is 1. P100 is no longer
+offered in any zone. New VM `hcr-v100` (n1-standard-8 + V100 16 GB, spot, ~$1.70/h) in us-central1-b boots
+from the same disk `hcr-gpu`, which was detached from the stopped `hcr-gpu` VM (still exists, no disk).
+Changes on the disk:
+- Kernel module switched to NVIDIA's proprietary `linux-modules-nvidia-580-server` (the open module needs Turing+).
+- torch 2.11.0+cu128 → **2.11.0+cu126**, torchvision 0.26.0+cu126 (the cu128 build has no sm_70 kernels).
+  Both also work on an L4.
+To go back to the L4: stop `hcr-v100`, detach the disk, attach it to `hcr-gpu` as boot disk.
